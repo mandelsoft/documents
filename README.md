@@ -6,3 +6,4 @@ and learnings from this model applicable for other environmnets or scenarios
 
 - [Basic Kubernetes Concepts](kubeconcept/README.md)
 - [Multi-Cluster Revisted](multicluster/README.md)
+- [Configuration and Instanalltion reconsidered](config/README.md)
