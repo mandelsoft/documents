@@ -1,7 +1,8 @@
 # Configuration and Installation Reconsidered
 
 Any kind of software installation, update or generally lifecycle management
-involves the parameterization of the (installation) procedure.
+involves a setup and/or update procedure and the parameterization of this
+(installation) procedure.
 There are plenty of such environments like [*Terraform*](https://www.terraform.io), [*Chef*](https://www.chef.io), [*Ansible*](https://ansible.com),
 package managers like [*APT*](https://wiki.ubuntuusers.de/APT), [*Crossplane*](https://www.crossplane.io) or even [*Kubernetes*](https://kubernetes.io) (we will see later why
 this appears in this list).
@@ -9,20 +10,39 @@ Configuration is used to adapt the installation process to the needs of
 particular applications or application installations.
 
 There are several approaches to simplify the description used to control the
-installation process ad simplify the creation of installer at all,
+installation process and simplify the creation of installers at all,
 from templating used to apply patterns or rules to avoid
 duplicate information to complete general or product specific DSLs used to
-express complex configuration descriptions tighter to the problem domain than
+express complex configuration descriptions closer to the problem domain than
 simple value structures. Those DSLs can be generalized by frameworks
 to shift the installer development from a general purpose language to 
 the composition of DSL elements.
 
-This paper will describe how configurations could look like and how it
-interacts with or relates to different installation procedures or processes.
-And it argues that the optimization of configurations and configuration DSLs
+In the following we will describe how configurations could look like and how it
+interacts with or relates to different concepts for installation procedures.
+And we argue that the optimization of configurations and configuration DSLs
 does not solve the problem with complex installations. Instead, the crucial element
 is the abstraction level between the configuration elements focusing on
 the problem domain and the finally maintained elements and the target environment.
+
+### The Problem
+
+Basically the installation problem decomposes into two similar problems, the
+initial setup of a 
+product or application and its update. These parts look very similar, especially
+because typically an attempt is made to describe solutions for both problem flavor
+in a uniform manner. But there is a large
+difference in complexity. Setting up a new installation is relatively simple compared 
+with an update to a newer version. During the setup no existing state of an
+installation has to be considered, which just required to describe and finally create
+the required implementation element in a target environment. In contrast to this, an 
+update in its general form has to handle the migration of an existing implementation
+structure towards a potentially different one arising from revised or evolved
+design decisions. This not only could require the migration of data structures but also
+to preserce abstract state distributed over multiple implementation elements.
+
+The term *installation* will be used in the following as a synonym for both *setup* and 
+*update*. If required, the term update will explicitly be used.
 
 ### General Layout
 
@@ -36,6 +56,7 @@ for a particular installation instance it consumes some installation
 configuration, which is used to specify information used to concretize
 variation points supported by the installation procedure valid for this
 particular installation instance.
+
 This configuration is typically always data centric, it does not contain 
 code used to define the installation process.
 
@@ -77,7 +98,8 @@ Here, often standardized tools like [Go-templates](https://pkg.go.dev/text/templ
 </center>
 
 Templates typically support expressions to solve the problem of derived values, but
-they can also be used to introduce explicitly named and parameterized elements. It provides
+they can also be used to introduce explicitly named and parameterized elements, which
+can act as syntactical elements in the finally maintained description. It provides
 the possibility to offer formal DSLs on top of simple structured value formats.
 
 <center>
@@ -88,14 +110,20 @@ This is achieved by providing libraries usable for every particular installation
 parameterization. It can either be provided by the installer itself to support generic 
 application definitions or as part of the installed product.
 
-In the first case the result is an installer generally usable for an intended 
-application domain. 
+In the first case the result is some kind of installer framework generally usable
+for an intended application domain, whose basic installation capabilities are defined
+by the installer coding.
 
 <center>
 <img src="./media/templated-dsl-a.png" style="width:50%" />
 </center>
 
-An example for such an environment can be [Crossplane](https://www.crossplane.io) (providing an extensible core framework) and compositions used to describe dedicated application scenarios.
+An example for such an environment can be [Crossplane](https://www.crossplane.io)
+(providing an extensible core framework) and compositions used to describe dedicated
+application scenarios. Another example is [Terraform](https://www.terraform.io), which
+provides core installation features used to create
+installation descriptions by orchestrating those basic elements to describe a particular
+implementation scenario.
 
 The second case will provide a framework, which is used to
 provide an application specific installer in some application domain with a simplified
@@ -106,14 +134,19 @@ configuration for such an application instance.
 </center>
 
 Here the library implemented with some kind of intermediate DSL is used
-to describe the DSL available for the config values maintained by a product operator.
-The intermediate DSL used to express the library might again be an explicit DSL used
+to describe the DSL available for the configuration values maintained by a product operator.
+The *intermediate* DSL used to express the library might again be an explicit DSL used
 to combine the operator configuration and the product specific settings to finally feed 
-the installation procedure. It is some cascading scenario for creating installers.
+the installation procedure. The concrete installation procedure is formulated in the 
+DSL of the installer framework, not in a general purpose programming language. The 
+final product installer is the combination of the original installer (framework) and
+its product specific configuration or better instrumentation. It is some cascading
+scenario for creating installers.
 
 The next step is to integrate the DSL parsing into the installer code.
 Following the first scenario from above, the result is an integrated
-installer framework for dedicated application domain. Examples are [Terraform](https://www.terraform.io)
+installer framework for dedicated application domain. Examples are
+[Terraform](https://www.terraform.io)
 with [HCL](https://github.com/hashicorp/hcl) or [KCL](https://www.kcl-lang.io).
 
 <center>
@@ -256,10 +289,17 @@ deletion. And it looses the possibility to handle
 migrations which could avoid loss of information
 (e.g. deleting a database and creating a new one is never
 a good idea, if the database contains data).
+
+For the setup part of an installation this is not really a problem, because
+it typically only requires some basic
+ordering and value dependencies among the created implementation elements.
+But it will cause problems for update procedures, because migrations have to
+be considered.
+
 This becomes even more evident, if the framework keeps state about the
 mapping of described elements, which is bound to or identified by
 the structuring of those elements in the DSL. A structural migration and
-therefore  the evolution of the installation or implementation (of the application)
+therefore the evolution of the installation or implementation (of the application)
 structure ss hardly possible.
 
 A typical sign here can be seen for *Terraform*: it is highly recommended
