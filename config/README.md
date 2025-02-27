@@ -314,6 +314,34 @@ All approaches to circumvent those problems are typically
 All this makes it very complicated, confusing and error-prone
 to work with such installer DSLs, if it is possible at all.
 
+<center>
+<img src="./media/recursion.png" style="width:55%" />
+</center>
+
+A new quality can be achieved, if the configuration is not a static input
+to the complete installation process, anymore. A first step towards this
+direction
+has been shown at the end of the last section, where it is possible to
+refer to information from the target environment by using special
+static expressions in the configuration description. This a special case
+for a feedback loop, which can be generalized. Now, we switch 
+from a static description to a completely dynamic one, by considering the 
+configuration itself as part of the target environment. The result is 
+a recursion, which enables particular installer code to implement its
+configuration elements by other configuration elements. The decision for
+the mapping is not a static one, but a free decision of the implementation 
+of the configuration elements.
+
+This feature is tightly coupled with the decomposition of the overall
+installer into separately processed configuration element types,
+in best case with the extensibility of the set of element types and
+a reconcilation approach. The last feature is required to be able
+to react on changes of the set of configuration elements and their
+attribution appearing after the initial process has been started.
+Therefore, it combines most of the elements shown before to drastically
+increase the expressive power of the overall system as well as the
+abstraction available for the installer implementation.
+
 ### Git Ops versus Configuration/Installation
 
 A popular operational model to handle installations is
@@ -369,7 +397,7 @@ completely change after an update. An *intermediate* DSL able to express all tho
 typically again a turing complete language, with synchronization, steps and explicit calls
 to the API of the target environment.
 
-Because of this, in most cases, it more convenient for an installation developer to implement
+Because of this, in most cases, it is more convenient for an installation developer to implement
 everything in the programming language he is used to. The only support by an installation
 framework should cover the access to the configuration values and potentially
 the execution and configuration of the installation process implementation itself.
@@ -403,7 +431,13 @@ a framework, which looks as follows:
 </center>
 
 It is able to handle multiple, potentially different installations by 
-explicit free coding able to execute any manipulation of a target environment.
+explicit free coding able to execute any manipulation of a target
+environment.
+
+To make this kind of abstraction available again for the implementation of
+particular installer code a dynamic configuration description should
+be chosen. It allows combining the expressive power of such a configuration
+model with the necessary flexibility on the implementation level.
 
 An example for such a framework can be the [Kubernetes Resource Model](https://github.com/kubernetes/design-proposals-archive/blob/main/architecture/resource-management.md) architecture,
 which provides a framework for running operators written in arbitrary general
