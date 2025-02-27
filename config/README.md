@@ -21,9 +21,10 @@ the composition of DSL elements.
 In the following we will describe how configurations could look like and how it
 interacts with or relates to different concepts for installation procedures.
 And we argue that the optimization of configurations and configuration DSLs
-does not solve the problem with complex installations. Instead, the crucial element
-is the abstraction level between the configuration elements focusing on
-the problem domain and the finally maintained elements and the target environment.
+does not solve the problem with complex installations. Instead, the crucial elements
+are the abstraction level between the configuration elements focusing on
+the problem domain and the finally maintained elements in the target environment
+and a dynamic description layer.
 
 ### The Problem
 
@@ -417,15 +418,41 @@ of other (used) resources, which reflect additional information about required
 runtime attributes. Following the reconcilation approach dynamic dataflow can be 
 achieved among different kinds of resources.
 
+In contrast to a static description layer as implemented by traditional installation
+systems, the *KRM* Data Plane as description
+layer is very dynamic. New elements can arbitrarily be created, updated or deleted
+via API during the *overall* installation process. This enables a flexible cascading
+of resource implementations backed by other (potentially more low level)
+configuration elements. This is new quality for the feedback between the target environment
+and configuration description: the description layer can be used as target environment.
+It is not only possible to describe value relations,
+but complete configuration elements can be maintained during the installation process.
+This cascading allows implementing completely dynamic setup and update flows
+by falling back to other descriptive elements, combining general purpose code to
+provide the required descriptive power and descriptive implementation objects. No other
+static description formalism described by a DSL can achieve this new quality.
+
+<center>
+<img src="./media/kubernetes.png" style="width:50%" />
+</center>
+
 Because of the nature of those resource declarations only fixed values are
 possible in the manifests, so it does not support the DRY approach. But there
 is a rich tool ecosystem handling such mechanism at the level of *GitOps*.
 
 This typically supports basic expression and template functionality but no
 feedback loop based on expressions. If this is required in special cases the
-resource manifest format must be used to implement an appropriate DSL by providing
+resource manifest format can be used to implement an appropriate DSL by providing
 values recognizable as expressions.
 The particular operator then has to implement this DSL. This way any kind of
 feedback loop, including the access to attributes of other resource kinds can be
 implemented.
+
+But because of the dynamic behavior of the description layers and drift control
+implemented by operators it is possible
+for operators to avoid all this and fill configuration attributes of resources
+on-the-fly with values arising from the mapping processing.
+
+This demonstrates the executive and descriptive power of a KRM-based ecosystem,
+which makes it highly suitable for installation scenarios.
 
