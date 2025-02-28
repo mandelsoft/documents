@@ -134,15 +134,26 @@ configuration for such an application instance.
 <img src="./media/templated-dsl-b.png" style="width:50%" />
 </center>
 
-Here the library implemented with some kind of intermediate DSL is used
-to describe the DSL available for the configuration values maintained by a product operator.
-The *intermediate* DSL used to express the library might again be an explicit DSL used
-to combine the operator configuration and the product specific settings to finally feed 
-the installation procedure. The concrete installation procedure is formulated in the 
-DSL of the installer framework, not in a general purpose programming language. The 
-final product installer is the combination of the original installer (framework) and
-its product specific configuration or better instrumentation. It is some cascading
-scenario for creating installers.
+Here the library isimplemented with some kind of intermediate DSL, and used
+to describe the DSL available for the configuration values maintained by a
+product operator.
+The *intermediate* DSL used to express the library might again be a logical
+or explicit DSL used to combine the operator configuration and the product
+specific settings to finally feed the installation procedure.
+
+The concrete installation procedure is
+formulated in the DSL of the installer framework, not in a general purpose
+programming language. The final product installer is the combination of the
+original installer (framework) and its product specific configuration or
+better instrumentation. It is some cascading scenario for creating 
+installers.
+
+For example *Terraform* as an installer framework is used by 
+an application to orchestrate the installation logic by terraform resources.
+Both, the terraform executable and the orchestration description is
+delivered. On the installation side a configuration file is provided by
+the human operator to specify the values required to parameterize the
+installation procedure.
 
 The next step is to integrate the DSL parsing into the installer code.
 Following the first scenario from above, the result is an integrated
@@ -314,19 +325,27 @@ All approaches to circumvent those problems are typically
 All this makes it very complicated, confusing and error-prone
 to work with such installer DSLs, if it is possible at all.
 
-<center>
-<img src="./media/recursion.png" style="width:55%" />
-</center>
+### Target Environment Reconsidered
 
 A new quality can be achieved, if the configuration is not a static input
 to the complete installation process, anymore. A first step towards this
 direction
-has been shown at the end of the last section, where it is possible to
+has been shown in the last section, where it is possible to
 refer to information from the target environment by using special
-static expressions in the configuration description. This a special case
-for a feedback loop, which can be generalized. Now, we switch 
-from a static description to a completely dynamic one, by considering the 
-configuration itself as part of the target environment. The result is 
+static expressions in the static configuration description. This a
+special case for a feedback loop, which can be generalized to whole
+element configuration descriptions.
+
+<center>
+<img src="./media/recursion.png" style="width:55%" />
+</center>
+
+In such a scenario, the static description is replaced by a completely
+dynamic one, by considering the configuration itself as part of the target
+environment. Configuration descriptions can be created, manipulated or
+deleted on demand, even during the execution of an installation step.
+
+The result is 
 a recursion, which enables particular installer code to implement its
 configuration elements by other configuration elements. The decision for
 the mapping is not a static one, but a free decision of the implementation 
@@ -334,13 +353,16 @@ of the configuration elements.
 
 This feature is tightly coupled with the decomposition of the overall
 installer into separately processed configuration element types,
-in best case with the extensibility of the set of element types and
-a reconcilation approach. The last feature is required to be able
+in best case combined with the extensibility of the set of element types,
+and a reconcilation approach. The last feature is required to be able
 to react on changes of the set of configuration elements and their
 attribution appearing after the initial process has been started.
 Therefore, it combines most of the elements shown before to drastically
 increase the expressive power of the overall system as well as the
-abstraction available for the installer implementation.
+abstraction available for the installer implementation. It can
+asynchronously decompose into other configuration elements and
+combine this with own synchronization and ordering logic.
+
 
 ### Git Ops versus Configuration/Installation
 
@@ -366,6 +388,8 @@ Nevertheless, *GitOps* systems like [Flux](https://fluxcd.io/) or
 process by tooling generating the configurations used, e.g. using [Kustomize](https://kustomize.io/) 
 to template and modify *Kubernetes* manifests (as resource configurations) prior to 
 handing them over to the execution environment (the *Kubernetes* data plane).
+In such a case the templating shown in the previous sections is either
+completely externalized or extended by the GitOps system.
 
 ### Conclusion
 
