@@ -40,7 +40,7 @@ the required implementation element in a target environment. In contrast to this
 update in its general form has to handle the migration of an existing implementation
 structure towards a potentially different one arising from revised or evolved
 design decisions. This not only could require the migration of data structures but also
-to preserce abstract state distributed over multiple implementation elements.
+to preserve abstract state distributed over multiple implementation elements.
 
 The term *installation* will be used in the following as a synonym for both *setup* and 
 *update*. If required, the term update will explicitly be used.
@@ -89,10 +89,29 @@ describe configuration tailored for a particular problem domain.
 </center>
 
 Formats for purely defining structures values, like JSON typically lack the feature 
-of supporting values derived from other settings or rules for common value layouts.
-At this point in time templating engines enter the scene, they are used to close this gap.
-Here, often standardized tools like [Go-templates](https://pkg.go.dev/text/template), [ytt](https://carvel.dev/ytt), [cue](https://cuelang.org) or [spiff++](https://github.com/mandelsoft/spiff), but keep the input
-(and the parsing) for the installation procedure simple.
+of supporting values derived from other settings or rules for common value layouts. But this is common problem for mre complex scenarios,
+values of particular attributes should either follow some rules, depend on
+other settings or should be set according to some relations in a particular
+scenario. The consequence is, that the same or related values must be
+configured independently at different structural locations in the
+configuration description.
+
+The description follows the WET approach, an
+acronym commonly taken to stand for *write everything twice* (alternatively
+*write every time*, *we enjoy typing* or *waste everyone's time*
+(wikipedia)). Instead, it would be desired to better follow the DRY
+approach, *Don't repeat yourself* or *duplication is evil*.
+YAML, for example, feature value references as part of its syntax to be able
+to refer to values or complete data structures defined somewhere else in
+the document. But this is only of limited value, because it does not allow
+expressionn rules or calculations.
+
+At this point in time typically templating engines enter the scene to close
+this gap.
+Here, often standardized tools like [Go-templates](https://pkg.go.dev/text/template), [ytt](https://carvel.dev/ytt), [cue](https://cuelang.org)
+or [spiff++](https://github.com/mandelsoft/spiff) are used to preprocess a
+configuration description to keep the input (and the parsing) for the
+installation procedure as simple as before.
 
 <center>
 <img src="./media/templates.png" style="width:50%" />
@@ -101,15 +120,24 @@ Here, often standardized tools like [Go-templates](https://pkg.go.dev/text/templ
 Templates typically support expressions to solve the problem of derived values, but
 they can also be used to introduce explicitly named and parameterized elements, which
 can act as syntactical elements in the finally maintained description. It provides
-the possibility to offer formal DSLs on top of simple structured value formats.
+the possibility to offer formal DSLs on top of simple structured value
+formats by providing functions or named and parameterized templates.
 
 <center>
 <img src="./media/templated-dsl.png" style="width:50%" />
 </center>
 
-This is achieved by providing libraries usable for every particular installation
-parameterization. It can either be provided by the installer itself to support generic 
-application definitions or as part of the installed product.
+This is achieved by providing libraries usable for every particular
+installation parameterization.
+The library describes parameterized functions or templates, which
+evaluate to more complex descriptive structures of the underlying data
+format. The result is some kind of *intermediate* DSL usable by the 
+operator maintaining the final configuration description.
+Those libraries can be domain specific and usable for a complete range of
+application or specific for a dedicated application installer.
+
+Therefore, it can either be provided by the technical installer itself to
+support generic application definitions or as part of the installed product.
 
 In the first case the result is some kind of installer framework generally usable
 for an intended application domain, whose basic installation capabilities are defined
