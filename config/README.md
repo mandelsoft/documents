@@ -96,15 +96,15 @@ scenario. The consequence is, that the same or related values must be
 configured independently at different structural locations in the
 configuration description.
 
-The description follows the WET approach, an
-acronym commonly taken to stand for *write everything twice* (alternatively
+The description follows the WET approach, a
+backronym commonly taken to stand for *write everything twice* (alternatively
 *write every time*, *we enjoy typing* or *waste everyone's time*
 (wikipedia)). Instead, it would be desired to better follow the DRY
 approach, *Don't repeat yourself* or *duplication is evil*.
 YAML, for example, feature value references as part of its syntax to be able
 to refer to values or complete data structures defined somewhere else in
 the document. But this is only of limited value, because it does not allow
-expressionn rules or calculations.
+expression rules or calculations.
 
 At this point in time typically templating engines enter the scene to close
 this gap.
@@ -117,75 +117,87 @@ installation procedure as simple as before.
 <img src="./media/templates.png" style="width:50%" />
 </center>
 
-Templates typically support expressions to solve the problem of derived values, but
-they can also be used to introduce explicitly named and parameterized elements, which
-can act as syntactical elements in the finally maintained description. It provides
-the possibility to offer formal DSLs on top of simple structured value
-formats by providing functions or named and parameterized templates.
+Templates typically support expressions to solve the problem of derived
+values, but they can also be used to introduce explicitly named and
+parameterized elements, which can act as syntactical elements in the
+finally maintained description. It provides the possibility to offer formal
+DSLs on top of simple structured value formats by supporting functions or
+named and parameterized templates.
+
+This kind of preprocessing might be done by a general purpose templating
+engine or an explicit DSL implementation. In general, the mapping is
+achieved by providing libraries usable for every particular
+installation parameterization. Such a library can be separated from the
+configuration description maintained by the human operator.
 
 <center>
 <img src="./media/templated-dsl.png" style="width:50%" />
 </center>
 
-This is achieved by providing libraries usable for every particular
-installation parameterization.
-The library describes parameterized functions or templates, which
+The library describes parameterized functions, templates or explicit DSL
+elements, which
 evaluate to more complex descriptive structures of the underlying data
 format. The result is some kind of *intermediate* DSL usable by the 
-operator maintaining the final configuration description.
-Those libraries can be domain specific and usable for a complete range of
-application or specific for a dedicated application installer.
-
-Therefore, it can either be provided by the technical installer itself to
-support generic application definitions or as part of the installed product.
-
-In the first case the result is some kind of installer framework generally usable
-for an intended application domain, whose basic installation capabilities are defined
-by the installer coding.
+human operator maintaining the final configuration description.
 
 <center>
-<img src="./media/templated-dsl-a.png" style="width:50%" />
-</center>
+<img src="./media/cascade.png" style="width:50%" />
+</center>*
+
+With the introduction of libraries we open the scenario to providing
+basic installers applicable to a wide range of applications. The concrete
+product installer is provided by a library or module set with a product
+specific composition of elements offered by the underlying basic installer.
+We can clearliy distinguish between the the basis installer, its
+specialization for a dedicated application or product, and its application
+for a particular installation instance.
+There are two basic possibilities where such a library can be located:
+- It can be localized on the right hand side together with the technical
+  basic installer itself to support generic application installations.
+  This way it is used to offer a higher-level abstraction or comfort for
+  the development of particular product installers. The installer itself 
+  is generalized to an installer framework applicable for installer
+  development for a particular application domain, whose basic installation
+  capabilities are defined by the core functions of the technical installer
+  code and the abstractions provided by the library.
+
+- Or it can be located on the left hand side as part of the installed product
+  to compose elements of the DSL provided by the installer code to meet the
+  installation needs for the particular product.
 
 An example for such an environment can be [Crossplane](https://www.crossplane.io)
-(providing an extensible core framework) and compositions used to describe dedicated
-application scenarios. Another example is [Terraform](https://www.terraform.io), which
-provides core installation features used to create
-installation descriptions by orchestrating those basic elements to describe a particular
+(providing an extensible core framework) and compositions used to describe
+dedicated  application scenarios. Another example is [Terraform](https://www.terraform.io),
+which provides core installation features used to create  installation
+descriptions by orchestrating those basic elements to describe a particular
 implementation scenario.
 
-The second case will provide a framework, which is used to
-provide an application specific installer in some application domain with a simplified
-configuration for such an application instance.
+Typically, the first case is always combined with the second case.
+Here the product specific library is implemented with some kind of
+*intermediate* DSL, a library extending the basic installer. The product 
+library composes elements of the intermediate DSL to describe an
+installation of the product. It is then used to describe the DSL
+available for the configuration values maintained by a product operator.
 
-<center>
-<img src="./media/templated-dsl-b.png" style="width:50%" />
-</center>
-
-Here the library isimplemented with some kind of intermediate DSL, and used
-to describe the DSL available for the configuration values maintained by a
-product operator.
-The *intermediate* DSL used to express the library might again be a logical
-or explicit DSL used to combine the operator configuration and the product
-specific settings to finally feed the installation procedure.
-
-The concrete installation procedure is
+The concrete installation procedure is now
 formulated in the DSL of the installer framework, not in a general purpose
 programming language. The final product installer is the combination of the
 original installer (framework) and its product specific configuration or
 better instrumentation. It is some cascading scenario for creating 
-installers.
+installers*.
 
 For example *Terraform* as an installer framework is used by 
 an application to orchestrate the installation logic by terraform resources.
 Both, the terraform executable and the orchestration description is
 delivered. On the installation side a configuration file is provided by
 the human operator to specify the values required to parameterize the
-installation procedure.
+installation procedure. 
 
-The next step is to integrate the DSL parsing into the installer code.
-Following the first scenario from above, the result is an integrated
-installer framework for dedicated application domain. Examples are
+The DSL used to describe the product specific element composition is not
+handled by a templating engine but is a builtin DSL. This is the next step:
+Integrating the DSL parsing into the installer code. The result is an
+integrated installer framework for a dedicated application domain.
+Examples are
 [Terraform](https://www.terraform.io)
 with [HCL](https://github.com/hashicorp/hcl) or [KCL](https://www.kcl-lang.io).
 
@@ -215,25 +227,26 @@ used by the *Kubernetes* *kubelet* to configure *Pods* with referential field ex
 With this last scenario we leave the pure configuration description, and we have to have
 a closer look at the installation procedure itself.
 
-### Installations Reconsidered
+### Installer Reconsidered
 
 The installer is coding responsible to map a configuration description
 to an appropriate set of elements in the target environment for the
 concrete installation described by the configuration. The installer itself is
-product or application specific, while the configuration describes information
-intended for the actual installation instance.
+product or application specific, while the configuration describes
+information intended for the actual installation instance.
 
 The last scenario in the previous section already shows a dedicated
-variant of an installer, which can act to interfere installation steps with provided
-configuration. This always requires a dedicated functional interpretation of values
-provided by the configuration description (e.g. an expression describing such a
+variant of an installer, which can combine information from installation
+steps with  provided configuration. This always requires an appropriate
+functional interpretation of expressions provided by the configuration
+description (e.g. an expression describing such a
 value reference). As such, it is a hybrid concept combining installation
 functionality with configuration descriptions.
 
-Orthogonally to this interwoven behaviour between installation ond configuration,
-it is possible to distinguish two different flavors:
+Orthogonally to this interwoven behaviour between installation and
+configuration, it is possible to distinguish two different flavors:
 
-- A installer can explicitly be called to execute an installation or an installation update.
+- An installer can explicitly be called to execute an installation or an installation update, either manually or as part of a CI/CD pipeline.
 - It can be an ongoing process aligning changes in the configuration with changes in the target environment. This kind of drift-control is called reconcilation or reconcilation-loop and is well-known from the *Kubernetes* ecosystem.
 
 <center>
@@ -305,59 +318,69 @@ the application independent generic installer framework. It is some kind
 of cascaded application of the initial installer layout. The idea behind this
 concept is to simplify and standardize the development of installers.
 
-The price is
-to decompose the installation problem into low-level fine granular elements
-offered by the (extensible) installation framework. A typical example for such an
-environment is *Terraform* with *HCL* as configuration DSL or even *Crossplane*
-enriched by extensions for various kinds of target
-environments offering the management for the elements provided by those environments
+The installation problem is decomposed into low-level fine granular elements
+offered by the (extensible) installation framework. Instead of writing
+general purpose code, now the composition is described on the DSL level.
+
+A typical example for such an environment is *Terraform* with *HCL* as 
+configuration DSL or even *Crossplane* enriched by extensions for various
+kinds of target environments offering the management for the elements
+provided by those environments
 (e.g. IaaS layers offering elements like VMs, networks, VPCs or volumes).
 
 This approach has typically four constraints for the design of the DSL:
 - to be as flexible as possible for describing installations and to avoid the
   creation of own general purpose code, the elements
-  offered on the DSL level are as close as possible to the elements of the target
-  environment.
-- therefore the extensible installer code provides a fixed one to one, or 1:n (where n is very small) mapping to elements of the target environment.
-- the framework must also handle the deletion of elements if it disappears from the concrete DSL manifestation.
-- to provide higher level abstractions, elements like compositions or modules are supported,
-  offering an own parameterization.
+  offered on the DSL level have to be as close as possible to the elements
+  of the target environment.
+- therefore the extensible installer framework code and its extensions
+  provide a fixed 1:1, or 1:n (where n is very small) mapping to elements
+  of the target environment.
+- the framework must also handle the deletion of elements if they disappear
+  from the concrete DSL manifestation.
+- to provide higher level abstractions, elements like compositions or
+  modules are supported, offering an own parameterization.
 
-Unfortunately, this has the consequence, that the installer at the DSL
+Unfortunately, this has the consequence, that the installer on the DSL
 level looses the control over the coordination of element creation and
 deletion. And it looses the possibility to handle
 migrations which could avoid loss of information
 (e.g. deleting a database and creating a new one is never
 a good idea, if the database contains data).
 
-For the setup part of an installation this is not really a problem, because
-it typically only requires some basic
+For the setup part of an installation this is not really a problem. 
+It typically only requires some basic
 ordering and value dependencies among the created implementation elements.
-But it will cause problems for update procedures, because migrations have to
-be considered.
+But it will cause problems for day-2 update procedures, because migrations
+must be considered to avoid fixing the implementation structure with the
+first shot of the installer.
 
 This becomes even more evident, if the framework keeps state about the
 mapping of described elements, which is bound to or identified by
-the structuring of those elements in the DSL. A structural migration and
-therefore the evolution of the installation or implementation (of the application)
-structure ss hardly possible.
+the structuring of those elements in the DSL. A structural migration, and
+therefore the evolution of the installation or implementation (of the
+application) structure, is hardly possible, because the overall abstract
+state must be preserved. But instead an implementation related state
+structure is held.
 
-A typical sign here can be seen for *Terraform*: it is highly recommended
-to carefully examine the output of the plan statement, before really
-applying a change.
+A typical telltale sign here can be seen for *Terraform*: it is highly
+recommended to carefully examine the output of the plan statement, before
+really applying a change. It allows examining the change operations,
+which would be done if the configuration is applied.
 
 All approaches to circumvent those problems are typically
 - highly specialized for particular problem flavors
-- require the embedding of general purpose code combined with complex synchronization mechanism to connect it with the implicit handling by the framework.
+- or require the embedding of general purpose code combined with complex synchronization mechanism to connect it with the implicit handling by the framework.
 
 All this makes it very complicated, confusing and error-prone
-to work with such installer DSLs, if it is possible at all.
+to work with such installer DSLs when evolving the implementation
+structure, if it is possible at all.
 
 ### Target Environment Reconsidered
 
-A new quality can be achieved, if the configuration is not a static input
-to the complete installation process, anymore. A first step towards this
-direction
+A new quality can be achieved, if the configuration or the DSL-based
+composition is not a static input to the complete installation process,
+anymore. A first step towards this direction
 has been shown in the last section, where it is possible to
 refer to information from the target environment by using special
 static expressions in the static configuration description. This a
