@@ -144,22 +144,23 @@ human operator maintaining the final configuration description.
 <img src="./media/cascade.png" style="width:50%" />
 </center>*
 
-With the introduction of libraries we open the scenario to providing
+With the introduction of libraries we open the scenario for providing
 basic installers applicable to a wide range of applications. The concrete
 product installer is provided by a library or module set with a product
 specific composition of elements offered by the underlying basic installer.
-We can clearliy distinguish between the the basis installer, its
+We can clearly distinguish between the basis installer, its
 specialization for a dedicated application or product, and its application
 for a particular installation instance.
-There are two basic possibilities where such a library can be located:
-- It can be localized on the right hand side together with the technical
+There are two basic possibilities where such libraries can be located:
+- It can be located on the right hand side together with the technical
   basic installer itself to support generic application installations.
-  This way it is used to offer a higher-level abstraction or comfort for
-  the development of particular product installers. The installer itself 
-  is generalized to an installer framework applicable for installer
-  development for a particular application domain, whose basic installation
-  capabilities are defined by the core functions of the technical installer
-  code and the abstractions provided by the library.
+  This way, it is used to offer a higher-level abstraction or comfort for
+  the development of particular product installers. The underlying 
+  installer itself is generalized to an installer framework applicable for
+  installer development for a particular application domain. Its basic
+  installation capabilities are defined by the core functions of the
+  underlying technical installer code and the abstractions provided by
+  the library.
 
 - Or it can be located on the left hand side as part of the installed product
   to compose elements of the DSL provided by the installer code to meet the
@@ -168,16 +169,17 @@ There are two basic possibilities where such a library can be located:
 An example for such an environment can be [Crossplane](https://www.crossplane.io)
 (providing an extensible core framework) and compositions used to describe
 dedicated  application scenarios. Another example is [Terraform](https://www.terraform.io),
-which provides core installation features used to create  installation
+which provides core installation features used to create installation
 descriptions by orchestrating those basic elements to describe a particular
 implementation scenario.
 
 Typically, the first case is always combined with the second case.
-Here the product specific library is implemented with some kind of
+The product specific library is implemented with some kind of
 *intermediate* DSL, a library extending the basic installer. The product 
 library composes elements of the intermediate DSL to describe an
 installation of the product. It is then used to describe the DSL
-available for the configuration values maintained by a product operator.
+available for the configuration values finally maintained by a product
+operator for a dedicated installation of the product.
 
 The concrete installation procedure is now
 formulated in the DSL of the installer framework, not in a general purpose
@@ -193,27 +195,31 @@ delivered. On the installation side a configuration file is provided by
 the human operator to specify the values required to parameterize the
 installation procedure. 
 
-The DSL used to describe the product specific element composition is not
-handled by a templating engine but is a builtin DSL. This is the next step:
-Integrating the DSL parsing into the installer code. The result is an
+In the next step the DSL used to describe the product specific element
+composition is not handled by a templating engine and library but is a
+builtin DSL directly supported by the basic installer by
+integrating the DSL parsing into the installer code. The result is an
 integrated installer framework for a dedicated application domain.
 Examples are
 [Terraform](https://www.terraform.io)
 with [HCL](https://github.com/hashicorp/hcl) or [KCL](https://www.kcl-lang.io).
-
 <center>
 <img src="./media/integrated-dsl.png" style="width:50%" />
 </center>
 
+This typically comes with an extensibility framework allowing to extend the
+core installation functionality under the hood of the provided DSL. We
+will come back to this in the next section.
+
 All the previous scenarios are always based on some kind of effective 
 configuration value set evaluable prior to an installation. The effective
-input for the installation procedure is a simple value set according to 
-the first scenario.
+input for the technical installation procedure is a simple value set
+according to the very first scenario.
 
 Such integrated DSLs now offer the possibility for a feedback cycle from the
-concrete installation process. It is possible to describe a value flow incorporating
-results from other installation steps or even inside the parameterization of a
-single step as long as a value for an attribute is 
+concrete installation process. It is possible to describe a value flow
+incorporating results from other installation steps or even inside the
+parameterization of a single step as long as a value for an attribute is 
 required only after some partial step has been executed to provide the
 described effective value.
 
@@ -224,8 +230,8 @@ described effective value.
 An example for such a configuration DSL is *Terraform* with *HCL* or even the *Pod* manifest
 used by the *Kubernetes* *kubelet* to configure *Pods* with referential field expressions.
 
-With this last scenario we leave the pure configuration description, and we have to have
-a closer look at the installation procedure itself.
+With this last scenario we leave the pure configuration description, and we
+have to have a closer look at the installation procedure itself.
 
 ### Installer Reconsidered
 
@@ -237,14 +243,15 @@ information intended for the actual installation instance.
 
 The last scenario in the previous section already shows a dedicated
 variant of an installer, which can combine information from installation
-steps with  provided configuration. This always requires an appropriate
+steps with provided configuration. This always requires an appropriate
 functional interpretation of expressions provided by the configuration
 description (e.g. an expression describing such a
 value reference). As such, it is a hybrid concept combining installation
-functionality with configuration descriptions.
+functionality with configuration descriptions. How such a concept can be 
+generalized will be shown in the next section.
 
 Orthogonally to this interwoven behaviour between installation and
-configuration, it is possible to distinguish two different flavors:
+configuration, it is possible to distinguish two different execution flavors:
 
 - An installer can explicitly be called to execute an installation or an installation update, either manually or as part of a CI/CD pipeline.
 - It can be an ongoing process aligning changes in the configuration with changes in the target environment. This kind of drift-control is called reconcilation or reconcilation-loop and is well-known from the *Kubernetes* ecosystem.
@@ -253,22 +260,24 @@ configuration, it is possible to distinguish two different flavors:
 <img src="./media/procedure.png" style="width:50%" />
 </center>
 
-The next flavors describing an own orthogonal dimension arise when considering
-the internal structure of the installer.
+The next flavors describing an own orthogonal dimension arise when
+considering the internal structure of the installer.
 The most simple one consists of explicit coding specialized for the intended
-installation scenario, including the evaluation of the configuration description.
+installation scenario, including the evaluation of the configuration
+description.
 
 <center>
 <img src="./media/explicit.png" style="width:50%" />
 </center>
 
-This is basically a direct implementation of the general layout shown previously.
-The typical application of this pattern are ad-hoc installers using scripts to
-provide a quick tool to set up something before it is productively used.
+This is basically a direct implementation of the general layout shown
+previously. The typical application of this pattern are ad-hoc installers
+using scripts to provide a quick tool to set up something before it is
+remastered to achieve a productively usable solution.
 
-In a next iteration an installation framework is used to embed the application
-specific installation/update procedure. The framework typically 
-covers two functionalities:
+In a next iteration an installation framework is used to embed the
+application specific installation/update procedure. The framework typically 
+covers three functionalities:
 - it provides access to the configuration values in a formalized way by evaluating the syntactical elements of the configuration format.
 - it controls the execution of the application specific code.
 - if multiple installers are involved it handles the dependency management.
@@ -277,12 +286,14 @@ covers two functionalities:
 <img src="./media/framework.png" style="width:50%" />
 </center>
 
-Typical applications of this pattern are operating system level packages handled
-by a package manager, like [APT](https://wiki.ubuntuusers.de/APT). But also [Kubernetes](https://kubernetes.io) basically follows this pattern, the
-configuration description is the resource manifest, the specialized code is the
-controller or operator. Kubernetes takes the role of the framework by handling the
-configuration description, coordinating the requests to the controller to execute
-updates and even to run the controllers.
+Typical applications of this pattern are operating system level packages
+handled by a package manager, like [APT](https://wiki.ubuntuusers.de/APT).
+But also [Kubernetes](https://kubernetes.io) basically follows this
+pattern, the configuration description is the resource manifest, the
+specialized code is the controller or operator. Kubernetes takes the role
+of the framework by handling the configuration descriptions, coordinating 
+the requests to the controller to execute updates and even to run the
+controllers.
 
 <center>
 <img src="./media/extensible-framework.png" style="width:50%" />
@@ -292,35 +303,45 @@ In many cases this framework is able to
 handle multiple specialized installers for different kinds of installation
 steps. The configuration description may describe multiple,
 now typed, elements according to those types. Every type has assigned
-special code, which is responsible to map the described elements of this
+specialized code, which is responsible to map the described elements of this
 type to elements in the target environment.
-The data plane/control plane concept of *Kubernetes* is an example for this pattern.
+The data plane/control plane concept of *Kubernetes* is an example for this
+pattern.
 
-But the most common use-case of this pattern in the domain of installers is to
-provide some kind of DSL, which
-can be used to describe multiple interdependent installation steps to describe the
-installation of an application. The installer for a particular application is
-developed with the DSL provided by the framework by orchestrating instances of
-the predefined installation types. To still offer the possibility to describe particular
-installation instances for the described application, the framework again provides
-the support for a separated specification of configuration values, which can be
-used to parameterize the elements described by the DSL.
+But the most common use-case of this pattern in the domain of installers is
+to provide some kind of generalized DSL, which can be used to compose
+multiple interdependent installation steps to describe the
+installation of a product. The installer for a particular application is
+developed with the DSL provided by the framework by composing instances
+of the predefined installation types. To still offer the possibility to
+describe particular installation instances for the described application,
+the framework again provides the support for a separated specification of 
+configuration values, which can be used to parameterize the elements
+described by the DSL.
 
 <center>
 <img src="./media/framework-values.png" style="width:55%" />
 </center>
 
-Now, the DSL part used to describe the installation elements is used to *implement*
-the installer and the installation instance specific  value configuration is used to 
-concretize the variation points offered by the application installer. 
-The final installer consists of a dedicated product specific DSL orchestration and
-the application independent generic installer framework. It is some kind
-of cascaded application of the initial installer layout. The idea behind this
-concept is to simplify and standardize the development of installers.
+Now, the DSL part provided by the framework and used to describe a
+composition of the supported installation elements is used to *implement*
+the installer. And the installation instance specific value configuration
+is used to concretize the variation points offered by the installer. 
 
-The installation problem is decomposed into low-level fine granular elements
-offered by the (extensible) installation framework. Instead of writing
-general purpose code, now the composition is described on the DSL level.
+As a result, the final installer consists of a dedicated product specific
+DSL composition and the product independent generic installer framework.
+It is some kind of cascaded application of the initial installer layout
+as shown in the previous section. The DSL interpretation if typically
+integral part of the basic installer code.
+
+The idea behind this concept is to simplify and standardize the development
+of installers. The installation problem is decomposed into the description
+of low-level fine granular elements offered by the (potentially extensible)
+installation framework. Instead of writing general purpose code, now the
+composition of those elements is described on the DSL level. The coordination
+and the mapping of the descriptive elements to the target environment is
+handled by the basic installer framework and its type specific mapping
+implementations.
 
 A typical example for such an environment is *Terraform* with *HCL* as 
 configuration DSL or even *Crossplane* enriched by extensions for various
@@ -421,9 +442,11 @@ A popular operational model to handle installations is
 [*GitOps*](https://www.gitops.tech). You might wonder why
 it has not been covered yet as part of the installation process.
 
-The reason is that basically *GitOps* is not part of the technical installation process.
+The reason is that basically *GitOps* is not part of the technical
+installation process.
 It is a separate process orchestrated around the pure installation process. 
-Its task is to handle the process of bringing together configurations stored in
+Its task is to handle the process of bringing together configurations
+stored in
 versioning repositories with the execution of the installation steps based on
 those configurations, but it does not describe the installation process itself.
 
@@ -431,16 +454,25 @@ those configurations, but it does not describe the installation process itself.
 <img src="./media/gitops.png" style="width:50%" />
 </center>
 
-So, *GitOps* finally just embeds and wraps a configuration and installation process as
-described by the previous sections.
+So, *GitOps* finally just embeds and wraps a configuration and installation
+process as described by the previous sections.
 
 Nevertheless, *GitOps* systems like [Flux](https://fluxcd.io/) or
 [ArgoCD](https://argoproj.github.io/cd/) might also enrich such a
-process by tooling generating the configurations used, e.g. using [Kustomize](https://kustomize.io/) 
-to template and modify *Kubernetes* manifests (as resource configurations) prior to 
-handing them over to the execution environment (the *Kubernetes* data plane).
+process by tooling generating the configurations used, e.g. using
+[Kustomize](https://kustomize.io/) 
+to template and modify *Kubernetes* manifests (as resource configurations)
+prior to handing them over to the execution environment (the *Kubernetes*
+data plane).
+
 In such a case the templating shown in the previous sections is either
 completely externalized or extended by the GitOps system.
+Because of the nature of the configuration representation in a versioning
+system, GitOps also take the role of describing compositions of
+configurations elements represented as different files. But finally those
+descriptive elements are always transformed and transferred
+into a representation and location from where they can be consumed by
+involved technical installers.
 
 ### Conclusion
 
