@@ -400,13 +400,14 @@ structure, if it is possible at all.
 ### Target Environment Reconsidered
 
 A new quality can be achieved, if the configuration or the DSL-based
-composition is not a static input to the complete installation process,
-anymore. A first step towards this direction
-has been shown in the last section, where it is possible to
+composition is not handled as static input anymore for the complete
+installation process. A first step towards this direction
+has been shown in the last section, where it was possible to
 refer to information from the target environment by using special
-static expressions in the static configuration description. This a
-special case for a feedback loop, which can be generalized to whole
-element configuration descriptions.
+static expressions in still static configuration descriptions. This is a
+very special case for such a feedback loop, described by explicit
+referential expressions. It can be generalized to
+whole element configuration descriptions.
 
 <center>
 <img src="./media/recursion.png" style="width:55%" />
@@ -416,12 +417,9 @@ In such a scenario, the static description is replaced by a completely
 dynamic one, by considering the configuration itself as part of the target
 environment. Configuration descriptions can be created, manipulated or
 deleted on demand, even during the execution of an installation step.
-
 The result is 
 a recursion, which enables particular installer code to implement its
-configuration elements by other configuration elements. The decision for
-the mapping is not a static one, but a free decision of the implementation 
-of the configuration elements.
+configuration elements by other configuration elements.
 
 This feature is tightly coupled with the decomposition of the overall
 installer into separately processed configuration element types,
@@ -435,6 +433,8 @@ abstraction available for the installer implementation. It can
 asynchronously decompose into other configuration elements and
 combine this with own synchronization and ordering logic.
 
+A typical example for such an environment is the data plane provided by 
+Kubernetes.
 
 ### Git Ops versus Configuration/Installation
 
@@ -481,55 +481,70 @@ Even with simple data formats it is possible to express rules, commonalities and
 The expressive power comes from the evaluation logic as part of the installation code.
 Explicit specialized DSL can be seen as syntactical sugar to improve the readability.
 
-A tiny step forward is the possibility to incorporate reflection of the target environment
+A tiny step forward is the abillity to incorporate reflection of the target
+environment
 into the parameterization of a configuration description.
 But a completely new quality only comes with the possibility to describe reactions
 on the actual target state compared with the described desired state.
 This not only means the evaluation of configuration values derived from installation steps
-or the actual target state, but the synchronization of installations
-steps and even deciding on
-installations steps because of configuration changes or, even more important, because of
-changed implementation decisions. This means that the installer might choose
+or the actual target state, but the bidirectional synchronization of
+installations steps and even deciding on
+installations steps because of configuration changes or, even more
+important, because of
+changed implementation decisions. This means that a new version of the
+installer might choose
 a changed mapping of the installation to elements into the target environment.
 This might cause additional actions, like data migrations, which must be synchronized
 with the other installation steps.
 
-All this requires code provided by the product or application, but the human operator
-still has to use his basic (simple) configuration setting for the particular
-installation instance.
-Even with the described scenario separating configuration values from configuration element 
-settings (as done by *Terraform* or *Crossplane* compositions) using an intermediate DSL, this
-kind of coding is required, because the set of mapped elements in the target environment might
-completely change after an update. An *intermediate* DSL able to express all those cases is 
-typically again a turing complete language, with synchronization, steps and explicit calls
-to the API of the target environment.
+All this requires code provided by the product or application. At the same
+time the human operator should not be overwhelmed by the resulting internal
+complexity. Ideally, he just has to understand the basic (simple) 
+configuration setting for the particular installation instance.
 
-Because of this, in most cases, it is more convenient for an installation developer to implement
-everything in the programming language he is used to. The only support by an installation
+Even with the separation of configuration values from
+configuration element settings (as done by *Terraform* or *Crossplane*
+compositions) by using an intermediate DSL, this kind of coding is required.
+It is necessary because the set of mapped elements in the target
+environment might completely change after an update.
+An *intermediate* DSL able to express
+all those cases is typically again a turing complete language, with
+synchronization, steps and explicit calls to the API of the target
+environment.
+
+Because of this, in most cases, it is more convenient for an 
+installation developer to implement everything in his prevelant programming
+language. The only support required from an installation
 framework should cover the access to the configuration values and potentially
-the execution and configuration of the installation process implementation itself.
+the execution and configuration of the installation process implementation
+itself.
 
-So, we are finally
-back to the very first picture by reducing the configuration description to the
-demands of the semantic of the installation, but never the concrete layout or the concretely 
-maintained elements in the target environment. We can see that the flexibility for
-designing update procedures can only be increased by also increasing the abstraction
-level between  the configuration description and the elements required in the target domain.
+So, we are finally back to the very first picture by reducing the
+configuration description to the demands of the semantic of the
+installation. It never describes the concrete layout or the concretely 
+maintained elements in the target environment.
+We can see that the flexibility for designing update procedures can only be
+increased to the necessary level by also increasing the abstraction
+level between the configuration description and the elements required in
+the target domain.
 
 <center>
 <img src="./media/abstract.png" style="width:50%" />
 </center>
 
-The conclusion therefore must be, that the flexibility really required to support
-necessary update steps and to decouple them from the
-configuration expected from the human operator in the long term can only be achieved
-by a very high abstraction between the configuration description and its final
-mapping to a composition of elements in the target environment. The description purely
+The conclusion therefore must be, that the flexibility really required 
+to support necessary update steps and to decouple them from the
+configuration expected from the human operator, in the long term, can only
+be achieved by a very high abstraction between the configuration
+description and its final mapping to a composition of elements in the
+target environment.
+The description purely
 focuses on *what* should be achieved (the intent), but not *how* it could
-be achieved (the required implementation elements). Only this can assure, that the 
-implementation can freely be chosen by the installer.
+be achieved (the required implementation elements). Only this can assure,
+that the implementation can freely be chosen by the installer without
+bothering the configuration description.
 
-When bringing all together, ongoing-drift control, extensibility, abstract
+When bringing all together, drift control, extensibility, abstract
 configuration and full control of the implementation mapping, we end up in
 a framework, which looks as follows:
 
@@ -542,36 +557,51 @@ explicit free coding able to execute any manipulation of a target
 environment.
 
 To make this kind of abstraction available again for the implementation of
-particular installer code a dynamic configuration description should
-be chosen. It allows combining the expressive power of such a configuration
-model with the necessary flexibility on the implementation level.
+particular explicit installer code, a dynamic configuration description
+should be chosen. It allows combining the expressive power of such a 
+configuration model with the necessary flexibility on the implementation
+level.
 
-An example for such a framework can be the [Kubernetes Resource Model](https://github.com/kubernetes/design-proposals-archive/blob/main/architecture/resource-management.md) architecture,
-which provides a framework for running operators written in arbitrary general
-purpose programming languages extending an extensible data plane hosting arbitrary
-abstract resource configurations in a simple configuration format for pure data
-and responsible for mapping those configured abstract resources to any
-implementation in possibly any target environment.
+An example for such a framework can be the [Kubernetes Resource Model](https://github.com/kubernetes/design-proposals-archive/blob/main/architecture/resource-management.md) architecture.
+It provides a framework for running operators written in arbitrary general
+purpose programming languages extending an extensible data plane hosting
+arbitrary abstract resource configurations in a simple configuration format
+for pure data. The operator is responsible for the mapping of those
+configured abstract resources to any implementation in possibly any target
+environment.
 
-Because all operators have access to the data plane they can evaluate resource
-references as part of their resource manifests to access appropriate manifests
-of other (used) resources, which reflect additional information about required 
-runtime attributes. Following the reconcilation approach dynamic dataflow can be 
+Because all operators have access to the data plane they can evaluate
+resource references as part of their resource manifests to access
+appropriate manifests of other (used) resources. This allows to incorporate
+additional information about required 
+runtime attributes from those resources. Following the reconcilation
+approach dynamic dataflow can be 
 achieved among different kinds of resources.
 
-In contrast to a static description layer as implemented by traditional installation
-systems, the *KRM* Data Plane as description
-layer is very dynamic. New elements can arbitrarily be created, updated or deleted
-via API during the *overall* installation process. This enables a flexible cascading
-of resource implementations backed by other (potentially more low level)
-configuration elements. This is new quality for the feedback between the target environment
-and configuration description: the description layer can be used as target environment.
+In contrast to a static description layer as implemented by traditional
+installation systems, the *KRM* Data Plane as description
+layer is very dynamic. New elements can arbitrarily be created, updated or
+deleted via API calls during the *overall* installation process. This
+enables a flexible cascading of resource implementations backed by other
+(potentially more low level) configuration elements. This is new quality
+for the feedback between the target environment and the configuration
+description: the description layer can be used as target environment.
+
 It is not only possible to describe value relations,
-but complete configuration elements can be maintained during the installation process.
+but complete configuration elements can be maintained during the
+installation process.
 This cascading allows implementing completely dynamic setup and update flows
-by falling back to other descriptive elements, combining general purpose code to
-provide the required descriptive power and descriptive implementation objects. No other
-static description formalism described by a DSL can achieve this new quality.
+by falling back to arbitrary other descriptive elements. It combines general
+purpose code for the required descriptive power and the usage of descriptive
+implementation objects.
+
+The general purpose code can coordinate the migration of the implementation
+structure including data migrations by rearranging the lower-level
+configuration elements combined with explicit API calls into some involved
+technical environment. All this is hidden behind the original simple
+configuration objects finally managed by a human operator.
+No other static description formalism described by a
+DSL can achieve this new quality.
 
 <center>
 <img src="./media/kubernetes.png" style="width:50%" />
@@ -586,14 +616,16 @@ feedback loop based on expressions. If this is required in special cases the
 resource manifest format can be used to implement an appropriate DSL by providing
 values recognizable as expressions.
 The particular operator then has to implement this DSL. This way any kind of
-feedback loop, including the access to attributes of other resource kinds can be
-implemented.
+feedback loop, including the access to attributes of other resource kinds
+can be implemented.
 
-But because of the dynamic behavior of the description layers and drift control
-implemented by operators it is possible
-for operators to avoid all this and fill configuration attributes of resources
-on-the-fly with values arising from the mapping processing.
+But because of the dynamic behavior of the description layers and 
+drift-control implemented by operators it is possible
+for operators to avoid all this and fill configuration attributes of
+resources on-the-fly with values arising from the mapping processing.
+The enabled a completely dynamic data flow without the need for static
+value references or expressions on the configuration side.
 
-This demonstrates the executive and descriptive power of a KRM-based ecosystem,
-which makes it highly suitable for installation scenarios.
+This demonstrates the executive and descriptive power of a KRM-based
+ecosystem, which makes it highly suitable for installation scenarios.
 
