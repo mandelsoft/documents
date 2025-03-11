@@ -600,7 +600,7 @@ structure including data migrations by rearranging the lower-level
 configuration elements combined with explicit API calls into some involved
 technical environment. All this is hidden behind the original simple
 configuration objects finally managed by a human operator.
-No other static description formalism described by a
+No other static **description** formalism described by a
 DSL can achieve this new quality.
 
 <center>
