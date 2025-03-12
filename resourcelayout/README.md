@@ -297,6 +297,49 @@ Also our account example can easily be implemented. New attachable systems could
 
 This way, aspect resources should be a standard layout for more complex, especially shared resource scenarios in a general management environment based of a Kubernetes-Resource-Model implementation.
 
+## Self-Descriptive Environment
+
+A Kubernetes data plane is extensible and mostly self-descriptive. New resource types
+can be configured via an own resource type, the Custom Resource Definitions (CRDs).
+They also include a structural definition of the resource manifest.
+The available types and formats can be queried by the data plane API provided by the API server.
+
+Those extensions are used for various use cases shown before:
+- implementation sharding (polymorphism)
+- providing shared aspects to be used by other resources following the implementation sharding.
+
+Unfortunately, this is not possible for typed sub structures. Although it is a common pattern to use type information similar to the one used for resource manifests, appropriate type information is not available on the data plane level, at most on the client side on the library level of a controller. 
+
+For the implementation sharding additionally a mechanism is required to assign resources to dedicated implementations (controllers). This is either handled by an explicit field,
+for example by the type of extension field (if avaialble) of by annotations ash explained earlier. Those annotations are also used to configure some parameterization, if no extension field is foreseen (for example in Ingress resources in Kubernetes).
+
+This kind of information is not part of the self-describing features of the Kubernetes data plane.
+
+It would be extremely helpful, if the implementations for a polymorphic resource could be declared like new resource types. Similar to CRDs this could be done by an *ImplementationClass* resource combined with a formalized extension field in the resource in question.
+
+
+  <p align="center">
+  <img src="./media/ICD.png" style="width:60%" />
+  </p>
+
+
+Similar to the CRD this declaration defines the name and the structure of this extension field
+and the values used to select a dedicated implementation (for example a simple type field with the identifying value).
+
+It could also define additional extension fields in the main resource together with structural alternatives.
+
+
+  <p align="center">
+  <img src="./media/EFD.png" style="width:60%" />
+  </p>
+
+A similar mechanism could also be used to describe valid structures for extension fields for variable configuration fields (the second case from above).
+The field paths for the extension fields must be defined in the CRD.
+
+This way the data plane would be completely self-descriptive and queryable. Especially it would be possible to determine which implementations are possible for a resource following the sharded implementation pattern. And variadic field content could be validated when applying manifests.
+
+
+
 
 
 
