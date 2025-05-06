@@ -31,6 +31,8 @@ Most of those examples were developed in the area of system configuration or bui
 - they support a fixed set of elements they work on (for example files, processes, etc. in CFEngine)
 - they mix declarations and code (like make)
 
+## A Generic API Model
+
 Although Kubernetes is intended to offer a distributed environment for container-based computational workloads its API model is not specialized or restricted to this use case. 
 
 <p align="center">
@@ -128,6 +130,11 @@ The Kubernetes example shown above already illustrates two different sub pattern
 
 - a controller used to *enriches* a resource by additional information. In Kubernetes, for example, the scheduler is a controller modifying Pods (The Node aspect) (by assigning them to a Node) based on information provided by the Pod and the available Node objects used as side resources. It does not implement a resource, but it *provides information* for the specification of a resource required by the main controller responsible for it. This pattern will be called *aspect enrichment pattern*.
 
+<p align="center">
+  <img src="./media/logical.png" style="width:50%" />
+  </p>
+
+This leads to another kind of controller, *logical controllers* Instead of mapping a resource to some implementation elements using an API of some external target environment, a controller might provide the required functionality by falling back to the data plane, again. It just creates or manipulates other resources, which together are used to implement the resource. This is some kind of cascading. We will see more about this in the next section. An example in Kubernetes for such a cascading are *Deployments*. They are implemented by *ReplicaSets*, which are then finally implemented by *Pods*. Only the last element is implemented in a real physical environment, as containers on a container engine using the operating system of a node. The two upper layers just manage other resources by creating, deleting and modifying them in a coordinated way over time to achieve scaling or a rolling update.
 
 All those patterns can be combined, for example, the scheduler combines the usage of side resources with the aspect enrichment pattern. Another example are the network plugins in Kubernetes, which are responsible for implementing the chosen flavor of the Pod-to-Pod networking (for example calico). This also is an appliance of the aspect implementation pattern in combination with the environment sharding pattern, because there is again one instance of the controller per node (*DaemonSets*), responsible for the network configuration on this node.
 
