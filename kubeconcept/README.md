@@ -54,7 +54,7 @@ application, called *controller*, using the REST API like normal users of the fu
 Basically, there is no difference anymore between an API user and the
 implementation of the functionality. The task of those controllers is to align the desired
 state it gets from the object state described by the documents managed by the API server with the
-actual state in the real-world. This process is called drift-control or
+actual state in the real-world or the *target environment* or *work plane* of the controller. This process is called drift-control or
 reconciliation. The resource document describes the desired state
 provided by its maintainer or owner and some status information provided by its
 controller used to reflect additional external state found for this
@@ -100,7 +100,7 @@ object types. It scans the object store using the REST API for instances
 matching its responsibility and compares the desired target state with
 the real-world state, for example the existence of a container set for a
 *pod* on a dedicated *node*. Its task is to assure that the real-world
-state matches the desired state and to do everything required to achieve this. The real-world environment is the *work-plane* of a controller.
+state matches the desired state and to do everything required to achieve this. The real-world environment is the *work plane* or *target environment* of a controller.
 
 <img src="./media/image3.png" style="width:6.53194in;height:3.50278in" />
 
@@ -181,66 +181,146 @@ cascading are orthogonal and can be combined in any combination.
 <img src="./media/image5.png" style="width:4.05906in;height:1.01181in" />
 </center>
 
-Besides these kinds of cascading, it is possible to distinguish among
-several behavioral types of controllers:
+Based on those variants of a controller, it is possible to formally describe
+controllers and their architecture by some basic archetypes described by
+three orthogonal dimensions:
+- controller behavior
+- controller organization
+- source/target or plane organization
 
-- *Resource Controller*
+This classification or those patterns are not exclusive. For example, a
+Logical controller (behaviour) may be a resource controller or an aspect controller.
+If a logical controller acts on a remote environment, which can be
+replicated, it can also be a sharded controller (organization), with one particular
+instance per remote environment. If those environments may be of different technical types, for example different IaaS layers, implementation sharding may be combined with environment sharding.
+
+### Behavioral Types
+
+The behavioral type describe how a controller works on its data plane and target environment.
+
+We can distinguish among the following variants:
+- resource controllers
+- attribute controllers
+- aspect controllers
+
+#### Resource Controllers
 
 <center>
 <img src="./media/image6.png" style="width:2.79134in;height:1.12992in" />
 </center>
 
-A resource controller is
-responsible for a resource and implements it by using some external API
+A resource controller or simple actuator is the typical appearance of a controller. It is
+responsible for a resource and implements this digital wtin in the realworld
+by using some external API.
 
-- *Aspect Controller*
+#### Attribute Controllers
 
-An aspect controller manages an aspect of another resource, this might
+An attribute controller manages an aspect in form of selected
+attributes of a resource, it does not implement this resource in the
+real world. This might
 be any set of attributes in the specification or status of a resource.
-Or it can also be some external element additionally required for the
-implementation of a resource. For example, the kube-scheduler assigns a
-node to a pod, which is not yet assigned to a node, or a cloud-controller
-manages an external load-balancer if requested by a Kubernetes service
-resource.
 
 <center>
-<img src="./media/image7.png"
+<img src="./media/Attribute.png"
 style="width:2.64961in;height:1.27559in" />
 </center>
 
-- *Logical Controller*
+The decision how to maintain those attributes is based on some
+real-world entities somehow related to the manipulated resource.
+Those real-world entities might again be hosted in a regular data plane.
+For example, the *kube-scheduler* assigns a
+node to a pod, which is not yet assigned to a node.
+To fulfill this task it examines the available *Node* objects in the data plane
+to figure out a possible target node for a new *Pod*, based on the resource requirements of the pod and the actual resource situation reported on the Node resources.  Once a target node
+could be determined it sets the node attribute of the Pod resource.
+But it is not responsible to implement the Pod resource. Therefore, it is not a regular resource controller. In this case, this is the *kubelet*.
+
+#### Aspect Controllers
+
+Like a regular resource controller and aspect controller works on a particular resource type. But is it not responsible for the main or even complete implementation of this resource in the real world, but for a partial aspect of the resource, only. This could also be some external element additionally or optionally required for the
+implementation of a resource. For example, a cloud-controller
+manages an external load-balancer if requested by a Kubernetes *Service*
+resource. The main functionality of a service, handling the routing of IP traffic for the service to the assigned pods, is done by a completely different controller in the Kubernetes controller manager.
+
+<center>
+<img src="./media/Aspect.png"
+style="width:2.64961in;height:1.27559in" />
+</center>
+
+This example also shows, that the target environment might be completely different for the various aspects. While the main target environment for the IP routing consist of the nodes of Kubernetes Cluster, the load balancers are managed in the IaaS environment used to run the cluster. Note: dependending on the implementation the service routing might also be implemented at the IaaS level.
+
+#### Logical Controller
+
+A logical controller
+implements its functionality by maintaining other resource objects. The
+real-world is again an object space.
 
 <center>
 <img src="./media/image8.png" style="width:1.79528in;height:1.24016in" />
 </center>
 
-A logical controller
-implements its functionality by maintaining other resource objects. The
-real-world is again the object space.
+It does not use an API of a target environment, to directly manage the
+implementation objects in this target environment intended by the resource, but an object-space. This is used to
+manage resource objects, again, which are then handled by their
+resource and aspect controllers to finally implement them, This mapping might be cascaded. There might be multiple such steps, but finally
+a target environment is reached, which represents the real-world originally intended by the initial resource object.
 
-- *Sharded Controller*
+
+### Controller Organization
+
+Resources must be correlated with controllers, responsible to implement
+the resources. There are several ways, how such an assignment might be
+organized:
+- straight
+- environment sharded
+- implementation sharded
+
+#### Straight controller assignment
+
+This is the typical controller design, one controller instance is responsible for all resources of a particular type.
+
+<center>
+<img src="./media/Straight.png" style="width:2.82283in;height:1.3937in" />
+</center>
+
+Although a controller implementation is state-less, only one controller
+instance is used to handle all resources. This is required to avoid
+inter-process synchronization to coordinate the processing of a single
+resource among different controller instances to avoid the processing
+for a resource by more than one
+instance in parallel.
+
+The only way to circumvent this synchronization is to establish a formal partitioning of the resource set. This leads to the next archetype: environment sharding
+
+#### Sharding
+
+For a typical resource there is a single instance of its controller
+responsible for handling the implementation of all instances of a resource type to avoid parallel processing of state changes.
 
 <center>
 <img src="./media/image9.png" style="width:2.82283in;height:1.3937in" />
 </center>
 
-For a typical resource there is a single instance of its controller
-responsible for handling the implementation of all instances of a resource type. This is required to avoid
-inter-process synchronization to coordinate the processing of a single 
-resource among different controller instances. But if the resource itself
+But if the resource itself
 provides some responsibility realm as part of its specification there
 may be one controller instance responsible for a particular value in
 this realm. For example, a Kubernetes Pod is assigned to a dedicated
 node and for every node a kubelet is running exclusively working on pods
 for this node. Because of the unique sharding criterion no external
-synchronization is required. This pattern typically involves the
+synchronization is required. The sharding criteria is either based on a
+particular attribute or can be uniquely derived from the attribute set
+of the resource.
+
+This pattern typically involves (but not necessarily) the
 controller instance to run on different runtimes, often related to its
 responsibility realm. For example, the kubelet runs directly on the node
 it is responsible for. Or the Gardener project uses a *gardenlet*
 running on various *seed* clusters used to run the control and data
 plane of managed Kubernetes clusters.
 
-This sub pattern will be called *environment sharding*. All instances of the controller are typically of the same type. A second scenario
+This sub pattern will be called *environment sharding*. All instances of the controller are typically of the same type. 
+
+A second sub scenario
 appears, if the same kind of resource can be implemented in different ways
 , for example for different kinds of technical environments. The various flavors are handled by different controllers. This will be called *implementation sharding*. Here, different instances typically have different types (or better, they use different implementations).
 
@@ -251,11 +331,25 @@ appears, if the same kind of resource can be implemented in different ways
 For both scenarios the resource must 
 provide information used to control the sharding. In addition to the resource type this information is used by the involved controllers to uniquely decide whether they are responsible for a particular resource or not.
 
-This classification or those patterns are not exclusive. For example, a
-Logical controller may be a resource controller or an aspect controller.
-If a logical controller acts on a remote environment, which can be
-replicated, it can also be a sharded controller, with one particular
-instance per remote environment. If those environments may be of different technical types, for example different IaaS layers, environment sharding may be combined with environment sharding.
+### Plane Organization
+
+This dimension describes archetypes for the relation of controllers to
+work and data planes.
+
+
+<center>
+<img src="./media/Multiplicity.png" style="width:2.82283in;height:1.3937in" />
+</center>
+
+Both, the source and the target side of a controller may consist of
+multiple instances. For example, a resource controller (using a regular
+data plane as source), might implement its resources in multiple
+instances of the target environment (instead on using environment
+sharding). It decides based on the resource attributes in which
+environment to implement the resource.
+
+n:m scenarios can be implemented by a single controller, or by
+a combination of controller instances used for partial relations.
 
 ## Wrapping Legacy APIs
 
