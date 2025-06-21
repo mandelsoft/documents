@@ -18,16 +18,14 @@ Installing software can basically be described by four elements:
 </center>
 
 The most simple *installer* is just a description listing the required parameters and steps with their parameterization, which
-need to be executed by an operator to set up or update a (new) installation of a software product.
+need to be executed by a human operator to set up a new, or update a given installation of a software product.
 For sure, this is clumsy, error-prone and does not scale for a larger number of installation.
 
 Therefore, automation is the mechanism of choice. So, what parts of the description can be automated?
-Having a closer look at a typical such installation procedure description shows that it can be departed into
-two different basic steps:
-- setting up the technical environment required for the software installation, meaning providing the
-  machines, their network connectivity and potentially elements like load balancers to multiplex incoming
-  requests to different instances as part of the software system installation.
-- installing the software packages into such a prepared environment.
+Having a closer look at typical installation procedure descriptions shows that they can be separated into
+two basic categories of steps:
+1. setting up the technical environment required for the software installation. This means providing the machines, their network connectivity and potentially elements like load balancers to multiplex incoming requests to different instances as part of the software system installation (requiring intricate internal details for the configuration of external elements). 
+2. installing the software packages into such a prepared environment.
 
 <center>
 <img src="./media/02-refined.png" style="width:80%" />
@@ -35,20 +33,19 @@ two different basic steps:
 
 At least the second step seems to be easily automatable; already since decades installers are used to install
 software onto a machine, with standard configurations or with input parameters for the actual installation.
+
 The first category is more difficult to handle.
 When dealing with physical hardware, machines, which must be bought and provisioned into a data center
 setup, the first part is often a manual process as long as no robots can handle the physical operations.
 
-But with the upcoming virtualization environments for data centers even those parts can be handled more and more like software installations.
-Hyperscalers, but also technical environments for local data centers, like OpenStack, introduced APIs
-usable to provision network configurations and virtual or even physical machines and their configuration with users granting remote access.
+But with virtualizated environments for data centers (with software defined networking, storage, compute, and everything) even those parts can be handled more and more like software installations. Hyperscalers, but also technical environments for local data centers (e.g. OpenStack) introduced APIs for Infrastructure-as-a-Service (IaaS). 
 
 <center>
 <img src="./media/03-IaaS.png" style="width:80%" />
 </center>
 
 Sounds simple, now we just can provide software installers as before, but not only handling the software installation
-(second part) as before, but the provisioning of the required technical environment, also.
+(second part) as before, but also the provisioning of the required technical environment.
 
 The real technical provisioning of the virtualizing infrastructure is not visible anymore and completely decoupled
 from the installation of a concrete software system. Basically, such an environment is a separate software system,
