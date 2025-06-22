@@ -130,10 +130,10 @@ is the difference to IaD?
 ## Infrastructure-as-Data
 
 In contrast to IaC, IaD is a much more fluffy term. You will find many more or less (more less) explanations for this term.
-The described core features range from declarative infrastructure definition, over reconciliation and control-loop, if the term is used in the context of Kubernetes,
+The described core features range from declarative infrastructure definition, over reconciliation and control-loop (if the term is used in the context of Kubernetes),
 over higher abstraction to the more abstract idea of decoupling specification of description elements from their implementation.
 
-If ChaGPT is asked, you probably get some answer like this:
+If ChatGPT is asked, you get an answer like this:
 
 - IaC (Infrastructure as Code)\
   Definition: Infrastructure as Code is the practice of managing and provisioning computing infrastructure through machine-readable configuration files rather than manual processes or interactive configuration tools.\
@@ -147,25 +147,25 @@ If ChaGPT is asked, you probably get some answer like this:
   Benefits: Higher abstraction over infrastructure, supports policy-based and intent-driven automation, enables infrastructure governance and control planes
 - Key Differences
 
-  | Aspect      | IaC                        | IaD                                  |
-  |-------------|----------------------------|--------------------------------------|
-  | Paradigm    | Code to manage infra       | Data to describe infra intent        |
-  | Abstraction | Low-level (e.g., scripts)  | High-level (declarative, modeled)    |
-  | Execution   | Typically run imperatively | Often interpreted by a control plane |
-  | Examples    | Terraform, Ansible         | Crossplane, Kratix                   |
+  | Aspect      | IaC                             | IaD                                  |
+  |-------------|---------------------------------|--------------------------------------|
+  | Paradigm    | Code to manage infra            | Data to describe infra intent        |
+  | Abstraction | Low-level (e.g., DSL, scripts)  | High-level (declarative, modeled)    |
+  | Execution   | Typically run imperatively      | Often interpreted by a control plane |
+  | Examples    | Terraform, Ansible              | KRM, Crossplane, Kratix              |
 
 This definition is quite non-distinctive, especially when considering the examples. Terraform is often used as representative for
-IaC and Crossplane for IaD. But when having a closer look at those tools the differences are nearly vanishing. Both are declarative,
+IaC and KRM w/Crossplane for IaD. But when having a closer look at those tools the differences are nearly vanishing. Both are declarative,
 they declare what should be achieved, not how (or when).
-Also, the abstraction level is basically identical. The base elements describe one-to-one elements in the managed infrastructure (like VMs),
+Also, the abstraction level is basically identical. The base models describe one-to-one elements in the managed infrastructure (like VMs, networks, etc.),
 both with minor improvements by combining tightly coupled elements like security groups and rules for those groups. Both provide some
 cascading for predefined blueprints, modules in terraform and compositions in Crossplane. So, this kind of abstraction cannot be the
 crucial differentiating aspect.
 So, what is the difference? Even if considering the reconcilation aspect (Terraform is seen as imperative (explicitly executed), while
-Crossplane is using Kubernetes- and controller-based drift-control). We can see, that repetitive calls to terraform does
-exactly the same, it determines the difference between the described desired state and the actual state in the infrastructure and
-calculates the required operations to align both states. This is drift-control. And the usage of a control plane as mentioned by ChatGPT
-is an implementation aspect offered by Kubernetes as implementation platform. Is it a required feature of IaD?
+Crossplane is using Kubernetes- and controller-based drift-control), we can deduce, that a periodic implementation with Terraform achieves
+exactly the same: determining the difference between the described desired state and the actual state in the infrastructure and
+calculating the required operations to align both states. This is drift-control. And the usage of a control plane as mentioned by ChatGPT
+is an implementation aspect offered by Kubernetes as runtime platform. Is it a required feature of IaD?
 
 IMHO, the central point here is the abstraction, but with a different focus as implied above. It has been formulated for example by
 [Kjetil Valle](https://blogg.bekk.no/infrastructure-as-data-768b806e45bb): Abstraction in the sense of strictly decoupling the
