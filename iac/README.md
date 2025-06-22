@@ -74,28 +74,28 @@ of your infrastructure.
 So, remembering the approach from the introduction, where we figured out, that API-driven infrastructure environments allow implementing
 installers for infrastructure setup similar to the well-known installers for software on a machine, it does not really seem to
 be something new. The only new element is the mental transfer of the concept of software installation
-to the infrastructure setup. As has been shown in many other areas, overcoming metal borders is often a difficult process.
-In fact, the effectively new elements are the infrastructure-as-a-service (IaaS) environments, opening the possibility to API driven infrastructure provisioning.
+to the infrastructure setup. As has been shown in many other areas, overcoming mental borders is often a difficult terrain.
+In fact, the effectively new elements are the Infrastructure-as-a-Service (IaaS) environments, opening the possibility to API driven infrastructure provisioning.
+
 IaC is just a logical consequence. 
 
 The idea to describe installation like code is also the basis for GitOps scenarios, where changes to a system are not directly done via API calls or manual steps, but changing the description stored in a versioning system (the desired state). Combining this with an automated process checking for version changes and then triggering the execution of the installation description provides an auditable, traceable and reproducible way to manage an installation.
 
 But this is not the only aspect of IaC. We have to distinguish between declarative and imperative IaC environments.
-Just using the API to write programs for the infrastructure setup is some kind of imperative IaC, regardless whether scripting languages
-like shell, python or pearl is used or regular native programming languages are used. But in this are a lot of tool arises, trying to simplify the
-development of an installer offering a more declarative approach. Such tools (like terraform or cloud formation (AWS))
-abstract from direct usage of the API in a programming language by introducing DSL as declarative abstraction layer. This layer enables to
-describe a formal textual model containing elements describing the parameterization of required infrastructure elements, which is then evaluated and executed by the tool.  Additionally, 
-the flow of data arising from the creation of elements into the configuration of other elements can be described. For example, a created network has an identity,
-which must be passed to the description element fora virtual machine, which should be connected to this network.
 
-Such kind of high-level code if much easier to understand and maintain as code in regular programming languages working on API level, even if appropriate
+Just using the API to write programs for the infrastructure setup is some kind of imperative IaC, regardless whether scripting languages
+like shell, python or pearl is used or regular native programming languages are used. This area gives rise to a number of tools that tryi to simplify the development. Often offering a more declarative approach. Such tools (like Terraform or CloudFormation from AWS)
+abstract from direct usage of the API in a programming language by introducing Domain Sepcific Language (DSL) as declarative abstraction layer. This abstraction layer enables to
+describe a formal textual model containing elements describing the parameterization of required infrastructure elements, which is then evaluated and executed by the tool.  Additionally, 
+the flow of data (and its order) arising from the creation of elements into the configuration of other elements that can be described. For example, a created network has an identity,
+which must be passed to the description element for a virtual machine, which should be connected to this network.
+
+Such kind of high-level code is much easier to understand and maintain with code, in regular programming languages working on API level, even if appropriate
 high level procedures are provided as library. In this sense the `code` now is a parameterized model or blueprint for the desired infrastructure
 setup.
 
 Typically, the same way the installation of software can be described, there are such tools not only coverering the setup of infrastructure
-but complete software installations including the infrastructure setup and software setup on a machine. May be, a better phrase for the acronym IaC should be
-*Installation-as-code*, and then it looks much less magical.
+but complete software installations including the infrastructure setup and software setup on a machine. Maybe, a better phrase for the acronym IaC should be *Installation-as-code*, and then it looks much less magical.
 
 A prominent representative of such a tool is Terraform.
 It can easily be extended to support the formal description of any kind of installable/creatable element, and is therefore applicable
