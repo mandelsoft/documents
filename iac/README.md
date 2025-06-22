@@ -120,10 +120,12 @@ The price for this abstraction is lack of flexibility, because
 only supported elements can be used. Additionally, those tools use the wiring information to generate an ordered sequence of
 operations required to bring the describe model into life. This limits, or even prohibits the possibility to control the operation flow.
 
-This perfectly fits for initial setup scenarios. But as we will see later, this will cause severe problems for upgrade procedures and leads to industry accepted human-in-the-loop for production environement. The consulting industry packages such toil with fancy terminology, such as "DevOps", "DevSecOps", and builds best-practices around it with further tooling. The DevOps Research and Assesment (DORA) offers key metrics to measure the performance of development and delivery teams. The metrics do not question the root cause of automation problems (cf. price for abstraction above), they only measure the performance and the outcome. 
+This perfectly fits for initial setup scenarios. But as we will see later, this will cause severe problems for upgrade procedures and leads to industry accepted "human-in-the-loop" for production environements.
+
+The consulting industry invented fancy terminology, such as "DevOps" and "DevSecOps", and built best-practices for IaC with further tooling. This establsihed IaC as industry accepted status quo for cloud based services ("you build it, you run it"). Furthermore, the DevOps Research and Assesment (DORA) established high-level key metrics to measure the performance of human development and delivery teams. These metrics and KPIs do not question the root cause of the automation failure (cf. price for abstraction above). They only measure the performance and the desired outcome with the help of human operational toil.
 
 But let's first come back to our IaC and IaD paradigms. Those formal models mostly already look more like data than code. So, what the heck
-should be the difference to IaD?
+is the difference to IaD?
 
 ## Infrastructure-as-Data
 
