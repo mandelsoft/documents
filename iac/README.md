@@ -38,7 +38,7 @@ The first category is more difficult to handle.
 When dealing with physical hardware, machines, which must be bought and provisioned into a data center
 setup, the first part is often a manual process as long as no robots can handle the physical operations.
 
-But with virtualizated environments for data centers (with software defined networking, storage, compute, and everything) even those parts can be handled more and more like software installations. Hyperscalers, but also technical environments for local data centers (e.g. OpenStack) introduced APIs for Infrastructure-as-a-Service (IaaS). 
+But with virtualized environments for data centers (with software defined networking, storage, compute, and everything) even those parts can be handled more and more like software installations. Hyperscalers, but also technical environments for local data centers (e.g. OpenStack) introduced APIs for Infrastructure-as-a-Service (IaaS). 
 
 <center>
 <img src="./media/03-IaaS.png" style="width:80%" />
@@ -55,7 +55,7 @@ with manual steps.
 But let's return to our general system installation problem. Is it solved with the availability of APIs for
 all the required steps? So, why such a hype around IaD and IaC?
 
-To approach to an answer of this question we have to have a closer look at those paradigms. Let's start with Infrastructure-as-Code.
+To approach to an answer of this question we have to have a closer look at those paradigms, and why they were developed. Let's start with Infrastructure-as-Code.
 
 ## Infrastructure-as-Code
 
@@ -79,23 +79,46 @@ In fact, the effectively new elements are the Infrastructure-as-a-Service (IaaS)
 
 IaC is just a logical consequence. 
 
-The idea to describe installation like code is also the basis for GitOps scenarios, where changes to a system are not directly done via API calls or manual steps, but changing the description stored in a versioning system (the desired state). Combining this with an automated process checking for version changes and then triggering the execution of the installation description provides an auditable, traceable and reproducible way to manage an installation.
+<center>
+<img src="./media/04a-responsibilities.png" style="width:80%" />
+</center>
 
-But this is not the only aspect of IaC. We have to distinguish between declarative and imperative IaC environments.
+To understand why there is a hype around it, we have to remember
+the historical responsibilities for the installations aspects shown in the previous section. While the software installer was always developed and provided by the software vendor, the infrastructure setup was a specialized local step designed, planned and executed on the installation site by the operator. This clear separation or responsibilities has been kept, even when
+the IaaS APIs entered the scene, although those APIs could have been used like the operating system APIs for creating the software installer.
 
+So, the focus lies on the operator and approaches to make his life easier.
+Therefore, paradigms and tools appeared that should support an operator easier fulfilling his traditional tasks, similar to already existing frameworks for providing software installers. As a result tools specialized for particular IaaS environments were provided, like AWS Cloudformation, or generals ones, extensible for any kind of environment, like Terraform.
+
+Instead, of writing code in a native programming language to make use of the
+IaaS API, Domain Specific Languages (DSL) are provided by those tools, that are more or less descriptive and seem to be better-suited to the usual tasks of a human operator. The new term was born (I)nfrastructure (a)s (C)ode. 
+
+But the term code is a little bit
+misleading. Once you have a formal description of the required setup, which can be executed automatically (by some tool), those description can be 
+maintained in versioning systems (like Git), similar to the code developed for the software to install.  Changes to a system environment are now done 
+as change in a versioning system by evolving the used descriptions, instead of
+executing manual steps on some (IaaS) UIs. Combining this with an automated process checking for version changes and then triggering the execution of the installation description provides an auditable, traceable and reproducible way to manage an installation. The term *GitOps* was born.
+
+We have to distinguish between declarative and imperative IaC environments.
 Just using the API to write programs for the infrastructure setup is some kind of imperative IaC, regardless whether scripting languages
-like shell, python or pearl is used or regular native programming languages are used. This area gives rise to a number of tools that tryi to simplify the development. Often offering a more declarative approach. Such tools (like Terraform or CloudFormation from AWS)
-abstract from direct usage of the API in a programming language by introducing Domain Sepcific Language (DSL) as declarative abstraction layer. This abstraction layer enables to
-describe a formal textual model containing elements describing the parameterization of required infrastructure elements, which is then evaluated and executed by the tool.  Additionally, 
-the flow of data (and its order) arising from the creation of elements into the configuration of other elements that can be described. For example, a created network has an identity,
+like shell, python or pearl is used or regular native programming languages are used. This area gives rise to a number of tools that try to simplify the development. Often offering a more declarative approach. Such tools 
+abstract from direct usage of the API in a programming language by introducing DSLs as declarative abstraction layer. This abstraction layer enables to
+describe a formal textual model containing elements describing the parameterization of required infrastructure elements, which is then evaluated and executed by the tool. Additionally, it is possible to describe
+the flow of data provided by the creation of elements into the configuration of other elements that can be described. For example, a created network has an identity,
 which must be passed to the description element for a virtual machine, which should be connected to this network.
 
-Such kind of high-level code is much easier to understand and maintain with code, in regular programming languages working on API level, even if appropriate
+Such kind of high-level code is much easier to understand and maintain compared to code in regular programming languages working on API level, even if appropriate
 high level procedures are provided as library. In this sense the `code` now is a parameterized model or blueprint for the desired infrastructure
 setup.
 
-Typically, the same way the installation of software can be described, there are such tools not only coverering the setup of infrastructure
-but complete software installations including the infrastructure setup and software setup on a machine. Maybe, a better phrase for the acronym IaC should be *Installation-as-code*, and then it looks much less magical.
+The next step was to be able to orchestrate multiple such task, like first creating the IaaS environment and then calling the software installer/updater. Tool, originally invented to support particular IaaS environments, were extended to more general orchestration environments.
+Or, this is still the task of an operator, to provide scripts around the
+core tools to orchestrate several independent installation or update steps.
+
+This way the initial boundary between the responsibilities of a software provider and an installer and the tools provided for related tasks artificially kept when introducing IaC to support IaaS APIs becomes more and more blurred.
+Typically, the same way the installation of software can be described, there are such tools not only covering the setup of infrastructure
+but complete software installations including the infrastructure setup and software setup on a machine. May be, a better phrase for the acronym IaC should be
+*Installation-as-code*, and then it looks much less magical.
 
 A prominent representative of such a tool is Terraform.
 It can easily be extended to support the formal description of any kind of installable/creatable element, and is therefore applicable
@@ -108,11 +131,11 @@ to any kind of environment.
 As a result, the installer now departs again into two parts, but different ones than before. Instead of distinguishing between
 infrastructure and software installation steps, now we have to distinguish between the installation type specific model and the
 code for the (extensible) tool. This differentiation also comes with another responsibility.
-We now have the operator, the model creator, which is the software or solution vendor, and the installation tool provider.
-The real (programming language) code is now independent of a concrete installation scenario.
+We now have the operator, the model creator, which is the software or solution vendor, and the installation tool (or extension)  provider.
+The real (programming language) code is now independent of a concrete installation scenario. The tools try to keep the higher, more descriptive, abstraction level of IaaS installation tools for the software installation, also.
 It must be applicable for a wide range of installation scenarios in order to avoid the development of special code and to achieve the desired simplification for the development of an installer.
 To achieve this goal, it just models the technical elements,
-which should be maintainable as part of the description model. The potential elements and their mapping to a target environment
+which should be maintainable as part of the description model, instead of operation flows. The potential elements and their mapping to a target environment
 are handled in a static manner by the used tool and optional plugins or extensions. The installer *implementation* provided by
 the manufacturer of the software system is then restricted to the orchestration of such predefined element types.
 
@@ -122,7 +145,7 @@ operations required to bring the describe model into life. This limits, or even 
 
 This perfectly fits for initial setup scenarios. But as we will see later, this will cause severe problems for upgrade procedures and leads to industry accepted "human-in-the-loop" for production environements.
 
-The consulting industry invented fancy terminology, such as "DevOps" and "DevSecOps", and built best-practices for IaC with further tooling. This establsihed IaC as industry accepted status quo for cloud based services ("you build it, you run it"). Furthermore, the DevOps Research and Assesment (DORA) established high-level key metrics to measure the performance of human development and delivery teams. These metrics and KPIs do not question the root cause of the automation failure (cf. price for abstraction above). They only measure the performance and the desired outcome with the help of human operational toil.
+The consulting industry invented fancy terminology, such as "DevOps" and "DevSecOps", and built best-practices for IaC with further tooling. This established IaC as industry accepted status quo for cloud based services ("you build it, you run it"). Furthermore, the DevOps Research and Assessment (DORA) established high-level key metrics to measure the performance of human development and delivery teams. These metrics and KPIs do not question the root cause of the automation failure (cf. price for abstraction above). They only measure the performance and the desired outcome with the help of human operational toil.
 
 But let's first come back to our IaC and IaD paradigms. Those formal models mostly already look more like data than code. So, what the heck
 is the difference to IaD?
@@ -218,13 +241,16 @@ arise with the initial approach. Therefore, we require a paradigm that takes bot
 
 ## Common Problems with those approaches
 
-This lack of abstraction or the way it is handled is the common root cause for most of the problems arising with those existing tools, regardless whether they pretend to be IaC or IaD tools,
-because of the eventually always fixed blueprint-based mapping of the specification to a set elements in the target environment, either directly or by instantiating a potentially cascaded set
-of blueprints (with again a fixed set of nested elements). Everything works fine for static implementation structures in the target environment,
+This lack of abstraction or the way it is handled is the common root cause for most of the problems arising with those existing tools, regardless whether they pretend to be IaC or IaD tools.
+Because of the eventually always fixed blueprint-based mapping of the specification to a set elements in the target environment (either directly or by instantiating a potentially cascaded set
+of blueprints (with again a fixed set of nested elements)), it is hardly not even not possible to describe conditional operation flows. Everything works fine for static implementation structures in the target environment,
 for the initial installation setup or even minor version upgrades, which preserve this
 basic layout of the implementation (in the sense of target elements). But they fail or at least run into ugly workarounds, if structural
 changes are required. Handling structural changes of a blueprint typically
-required coordinated operations, which do more than creating, updating or deleting of an element in the target environment.
+requires coordinated operations, which do more than creating, updating or deleting of an element in the target environment.
+
+But even seemingly simpler tasks quickly bring such descriptions to their limits. For example, you want to scale up an ETCD cluster. From a description side this just means to increment an integer value.
+But technically several coordinated actions are required to scale up such a cluster. This requires highly specialized code, not only the description of a set of technical elements and their mapping into a target environment.
 
 ## Towards an Installation System
 
@@ -251,21 +277,33 @@ can use higher level elements provided by other manufactures to base its install
 elements of the used tool (and potential extensions). The same is true for tools like Crossplane. So one important feature required is the ability to fall back to pre-maintained
 building blocks. The guiding principle here is divide-and-conquer, or sitting on the shoulders of giants.
 
-The second question is tightly coupled with the first one. The cascaded approach must allow to distribute the responsibility (for their development) over many providers. And it must be simple and automatable to bring them together.
-So, the used sub-elements and their implementation are software components, like the components intended to run the system and they must be deliverable and installable together with your software.
-This basically means, that the installation process must be capable to also install parts of its own toolset. The dependencies of those part must be locally handled, they should be some-how self-contained. Installing an extension must also install the required extensions. Here, terraform uses its own runtime and the used modules are described by the
+The second question initially focuses on the responsibilities in our first installation approach.How is reposnisble for what, or better how is developing which part: here we had
+
+- Software Installer: developed by Software Provider
+- Infrastructure Setup: Operator
+-  Installation Orchestration: Operator
+
+As has been seen before, this separation resulted in a simplification for the
+infrastructure setup and the orchestration, which has been expanded by the tools to also cover the software installation. With the provisioning of APIs for infrastructure setup and their standardization this boundary in no longer mandatory, concerning the bearable description complexity as well as for the responsibility. Standardization is mainly achieved today because of the limited number of leading IaaS provider environments, whe have AWS, Google, Microsoft Azure, Ali Cloud and with OpenStack an open source solution for private cloud environments. The arising Apeiro architecture could even simplify and streamline the usage of infrastructure in the future.
+Software installation could today completely be described (with an appropriate parameterization) by an installer provided by the software or solution vendor.
+Therefore, second question is tightly coupled with the first one. The cascaded approach must allow to distribute the responsibility (for their development) over many providers. And it must be simple and automatable to bring them together.
+So, the used sub-elements and their implementation are software components, like the components intended to run the system, and they must be deliverable and installable together with your software.
+This basically means, that the installation process must be capable to also install parts of its own toolset. The dependencies of those part must be locally handled, they should be some-how self-contained. Installing an extension must also install the required extensions.
+
+Here, terraform uses its own runtime and the used modules are described by the
 installation model and are automatically downloaded when the model is evaluated. Crossplane uses the extensibility feature of a Kubernetes cluster to deploy. The installation description is a set of Kubernetes manifests
 which are deployed into a Cluster running Crossplane. With specialized resources the system can be extended. Problematic here is the order of those deployments. Resources can only be deployed,
 if the appropriate resource definitions are already available. Therefore, a process is required around the deployment of the installation description, which keeps track of such an ordering. Typically, the extension mechanism is used to provide new types of core elements, but they could probably also be used to offer new more high-level building blocks.
 Therefore, the next requirement for an installation process is to be able to describe and execute a self-descriptive installation process without the need for further external coordination mechanisms.
 
 This leads to the third question. How are the cascaded levels organized? In plain IaC tools like Terraform, the installation is divided into at least two phases: First the evaluation of the installation description, exploding all nested levels and providing the required extensions. The result is complete and closed description based on the final low-level description elements. This description is then executed in a closed batch. In Crossplane, this is handled fundamentally different. There is no closed description to evaluate. Instead, every element, including the cascaded ones,
-are independently (and potentially in parallel) handled. Nested compositions are exploded on demand into the same dataplane used for the initially deployed manifests.
+are independently (and potentially in parallel) handled. Nested compositions are exploded on demand into the same data plane used for the initially deployed manifests.
 
 This is a feature provided by the Kubernetes runtime, which will become imported, as we'll see later.
 
-Following the initial installer layout, the top-level element for an installation is given by the specification values for the intended installation. This element should be the only element maintained by the operator of the installation following the decoupling idea from the IaD section. It should an element (and handled) like any other building block of the installation system. A uniform model is helpful to support arbitrary aggregations, even if not forseen by the developer of a building block. The definition of this level is provided by the distribution provider (or directly by the manufacturer). It defines the installation parameters for the top-level element and breaks it down to the next lower level. This could be directly the API of the target environment, but this would mean to concentrate the responsibility in one single hand.
-As we have seen, it is highly recommended to offer some kind of modularization to enable distributed responsibility. Those elements should be first class elements like all the other installation descriptions. For the sake of observability, even the lowest level elements, directly describing elements in the target environment, should also be described by first-class installation elements, like the initial specification and modularized cascaded elements. Every level maps elements it is reponsible for to elements of the next level, which might again be mapped accordingly. The recursion base are final low-level elements as provided by the Crossplane ecosystem, which are directly mapped to API calls for the underlying infrastructure elements. A (human or automated) operator is able this way to find a complete digital twin of the involved installation elements as part of the installation description model.
+Following the initial installer layout, the top-level element for an installation is given by the specification values for the intended installation. This element should be the only element maintained by the operator of the installation following the decoupling idea from the IaD section. Orchestration of multiple installations, just means to be able to describe the required installations and their wiring in form of attributes or dependencies in those descriptions. Those top-level elements should be elements (and handled) like any other building block of the installation system. A uniform model is helpful to support arbitrary aggregations, even if not foreseen by the developer of a building block. The definition of this level is provided by the distribution provider (or directly by the manufacturer). It defines the installation parameters for the top-level element and breaks it down to the next lower level. This could be directly the API of the target environment, but this would mean to concentrate the responsibility in one single hand.
+
+As we have seen, it is highly recommended to offer some kind of modularization to enable distributed responsibility. Those elements should be first class elements like all the other installation descriptions. For the sake of observability, even the lowest level elements, directly describing elements in the target environment, should also be described by first-class installation elements, like the initial specification and modularized cascaded elements. Every level maps elements it is responsible for to elements of the next level, which might again be mapped accordingly. The recursion base are final low-level elements as provided by the Crossplane ecosystem, which are directly mapped to API calls for the underlying infrastructure elements. A (human or automated) operator is able this way to find a complete digital twin of the involved installation elements as part of the installation description model.
 
 To simplify the complete environment, all those elements, regardless of their levels,  should be first-class installation elements and include information about the element, for which they have been created. This makes it easier for an operator to understand the overall system setup. To offer such a uniform model, the required extensions must be installation elements, also. To avoid the need for an upfront global knowledge about the required extensions, every module, or element and its mapping implementation must be self-contained and be able to provision its own requirements. This kind of separation-of-concern is important to be able
 to freely compose modules just according to their specification without knowledge about their implementation. This is urgently required to stick to the decoupling feature requested for the IaD paradigm. 
@@ -296,6 +334,7 @@ Especially such a coordination is not possible for blueprint based installation 
 and in general a requirement for updating existing installations. If this is not supported, the first throw determines the structure for all future versions, which should not be acceptable. Therefore, another crucial requirement for an installation environment is, that every mapping (of a specification) to its implementation (in the sense of generated elements) must potentially be under the full control of specialized coding, similar to our initial installation scetch. This is basically the same requirement we already found as part of the extensibility feature.
 
 Let's summarize: In addition to the basic features already covered by the IaC paradigm the following features are required:
+- The operator should be able to focus on the top-level installations, their parameterization and wiring.
 -  Supporting separation-of-concern by offering self-contained module-like elements as installation elements.
 -  A uniform descriptive model for all kinds of installation elements, including extensions and modules.
 -  An extensible set of installation element types.

@@ -7,4 +7,5 @@ and learnings from this model applicable for other environmnets or scenarios
 - [Basic Kubernetes Concepts](kubeconcept/README.md)
 - [Multi-Cluster Revisted](multicluster/README.md)
 - [Configuration and Installation reconsidered](config/README.md)
+- [*IaC* and *IaD* revisited](iac/README.md)
 - [API Model Design Patterns](resourcelayout/README.md)
