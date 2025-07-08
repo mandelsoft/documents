@@ -287,8 +287,10 @@ Although a controller implementation is state-less, only one controller
 instance is used to handle all resources. This is required to avoid
 inter-process synchronization to coordinate the processing of a single
 resource among different controller instances to avoid the processing
-for a resource by more than one
-instance in parallel.
+for a resource by more than one instance in parallel.
+
+> [!NOTE]
+> Nevertheless, in most cases high availability is required for those controllers. This is typically achieved by running multiple instances with a lease management, which assures, that only one instance is active at a time (active-passive failover).
 
 The only way to circumvent this synchronization is to establish a formal partitioning of the resource set. This leads to the next archetype: environment sharding
 
@@ -298,7 +300,7 @@ For a typical resource there is a single instance of its controller
 responsible for handling the implementation of all instances of a resource type to avoid parallel processing of state changes.
 
 <center>
-<img src="./media/image9.png" style="width:2.82283in;height:1.3937in" />
+<img src="./media/EnvShared.png" style="width:2.82283in;height:1.3937in" />
 </center>
 
 But if the resource itself
@@ -330,6 +332,20 @@ appears, if the same kind of resource can be implemented in different ways
 
 For both scenarios the resource must 
 provide information used to control the sharding. In addition to the resource type this information is used by the involved controllers to uniquely decide whether they are responsible for a particular resource or not.
+
+<center>
+<img src="./media/EnvMapShared.png" style="width:2.82283in;height:1.3937in" />
+</center>
+
+Another flavor covers the scenario, where the
+same resource (instance not type) requires an implementation in multiple
+separated target environments, for example the kube-proxy establishing
+Service IP routing on every node in a Kubernetes cluster. Here, we have
+again controller instances for every environment,
+but responsible for the implementation of a single resource in a particular technical environment of a set of environments.
+This sub pattern will be called *mapping sharding*, a single resource has a similar mappings in different environments handled by different controller instances. Hereby, multiple controller instances are responsible for the same resource instance, but different target environments, which must be managed in parallel. this is similar to the environment sharding, but now e have 1:n relation of resource to environment.
+This flavor can be based on the environment sharding, where every environment 
+uses a similar implementation based on the same controller type, or implementation sharding, where different target environments require a different controller implementation.
 
 ### Plane Organization
 
