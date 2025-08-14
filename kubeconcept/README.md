@@ -272,6 +272,7 @@ Resources must be correlated with controllers, responsible to implement
 the resources. There are several ways, how such an assignment might be
 organized:
 - straight
+- context sharded
 - environment sharded
 - implementation sharded
 
@@ -296,15 +297,33 @@ The only way to circumvent this synchronization is to establish a formal partiti
 
 #### Sharding
 
-For a typical resource there is a single instance of its controller
-responsible for handling the implementation of all instances of a resource type to avoid parallel processing of state changes.
+For a typical resource there is a single instance of its controller, with a dedicated resource-specific implementation,
+responsible for handling the mapping of all instances of a resource type to avoid parallel processing of state changes.
 
 <center>
-<img src="./media/EnvShared.png" style="width:2.82283in;height:1.3937in" />
+<img src="./media/CtxSharded.png" style="width:2.82283in;height:1.3937in" />
 </center>
 
-But if the resource itself
-provides some responsibility realm as part of its specification there
+But there might be multiple different potential technical environments which
+should be used to implement the resources found in a data plane. An example for this
+are the different cloud providers, which can be used to run a Kubernetes cluster.
+Depending on the context the data plane resources  should be used a different
+implementation of the controller is required. This pattern is called *context
+sharding*.  Typical for this sharding pattern is that for one data plane context,
+a single mapping implementation (the controller) is used. For one data plane this
+is just the standard behavior. it does not require additional sharding information
+in the resource. But it requires to identify a common uniform resource type
+specification applicable for all potential environment types. Sometimes it is
+required to provide an extension mechanism to extend the specification part by
+environment specific information (see polymorphism below for more details). 
+
+<center>
+<img src="./media/EnvSharded.png" style="width:2.82283in;height:1.3937in" />
+</center>
+
+Even if in one data plane context only one mapping implementation is required,
+the resource itself may provide some responsibility realm as part of its
+specification. According to such a realm there
 may be one controller instance responsible for a particular value in
 this realm. For example, a Kubernetes Pod is assigned to a dedicated
 node and for every node a kubelet is running exclusively working on pods
@@ -327,7 +346,7 @@ appears, if the same kind of resource can be implemented in different ways
 , for example for different kinds of technical environments. The various flavors are handled by different controllers. This will be called *implementation sharding*. Here, different instances typically have different types (or better, they use different implementations).
 
 <center>
-<img src="./media/ImplShared.png" style="width:2.82283in;height:1.3937in" />
+<img src="./media/ImplSharded.png" style="width:2.82283in;height:1.3937in" />
 </center>
 
 For both scenarios the resource must 

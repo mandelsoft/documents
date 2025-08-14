@@ -72,29 +72,43 @@ The controller is responsible for the mapping of one resource type, its *main re
 In this general pattern there is one implementation for the resource type, and the controller uses a dedicated API to access the target environment. This typically means that the controller and the target environment are singletons.
 
 <p align="center">
+<img src="./media/multi-target2.png" style="width:50%" />
+</p>
+
+Nevertheless, there may be multiple instances of such a target environment intended to be handled by the same management layer.
+This is possible as long as all those instance are providing the same technical API. The resource (or the side resource)
+can be extended to additionally describe the intended target environment, for example by including the address of an API endpoint to use. If all such target environments are reachable from a single controller installation, the same controller can still be used to handle all resources, regardless which environment is intended to be used.
+
+<p align="center">
+<img src="./media/multi-target.png" style="width:50%" />
+</p>
+
+Basically, this looks like a shared target environment, with multiple potential endpoints. which might even be hidden behind a single global API endpoint. For example the AWS API hides the technical regional endpoint behind an API layer, where just the region has to be specified. The necessary information for the differentiation must in any case be part of the resource specification or the side resources.
+
+<p align="center">
 <img src="./media/env-sharding.png" style="width:50%" />
 </p>
 
-In some scenarios there is no single technical target environment, but multiple instances of such an environment featuring the same API intended to be handled by the same management layer. Depending on the nature of this API and its shielding against the runtime environment of the controller and the data plane, it might be useful or even required to run the controller near the intended target environment. In this case there might be multiple controller instances responsible for a single resource type.
+Depending on the nature of this API and its shielding against the runtime environment of the controller and the data plane, it might be useful or even required to run the controller near the intended target environment. In this case there might be multiple controller instances responsible for a single resource type.
 
-This is one flavor of a *sharding* pattern and will be called *environment sharding pattern*: The same resource type requiring the same kind of mapping into the same kind of target environments requires multiple controller instances. A typical appliance of this pattern in Kubernetes is the*kubelet*. All nodes of a Kubernetes cluster together build the work plane intended to be used to map *Pod* resources to. The kubelet is a controller running on every *Node*. It uses the local Operating System/container API to manage the containers implementing Pods on this node.
+This is one flavor of a *sharding* pattern and will be called *environment sharding pattern*: There is still a single resource type requiring the same kind of mapping into the same kind of target environments, but environment specific instances of the controller are required. This sharding might have technical or practical reasons. A typical appliance of this pattern in Kubernetes is the *kubelet*. All nodes of a Kubernetes cluster together build the work plane intended to be used to map *Pod* resources to. The kubelet is a controller running on every *Node*. It uses the local Operating System/container API to manage the containers implementing Pods on this node.
 
-Any case of sharding requires the availability of information sufficient to establish a unique relation between a resource and a controller instance. For Pods this is the name of the Node stored as attribute in the specification of the Pod. For a fixed assignment this information must be immutable (like for Pods), but it might be modifiable, also, if it should be possible to switch the target environment on demand.
+Any case of sharding requires the availability of information sufficient to establish a unique relation between a resource and a controller instance. This is basically the same information already required for our former multi-environment scenario with one controller instance. For Pods in Kubernetes this is the name of the Node stored as attribute in the specification of the Pod. For a fixed assignment this information must be immutable (like for Pods), but it might be modifiable, also, if it should be possible to switch the target environment on demand.
 
-In this first sharding scenario the mapping between resource and target environment is identical, therefore the same kind of controller is used. The resource represents a particular technical functionality in the given context. But it might happen that different implementations are possible or even required, because the same functionality (described by the resource)should be mapped to different technical environments. In this pattern the resource type represents some kind of abstract functionality or element, which not necessarily implies a unique implementation. 
+In those sharding scenarios the mapping between resource and target environment is identical, therefore the same kind of controller is used. The resource represents a particular technical functionality in the given context. But it might happen that different implementations are possible or even required, because the same functionality/semantics (described by the resource) should be mapped to different technical environments featuring different APIs requiring a different mapping. In this pattern the resource type represents some kind of abstract functionality or element, which not necessarily implies a uniform implementation. 
 
 Here, we have two sub flavors:
-The implementation is fixed for the context of the usage of the data plane, but depending on the kind of general target environment used for the given context. In this scenario, there is still one controller implementation, but it differs from context to context. In Kubernetes an example for this pattern is the Cloud Controller Manager. It hosts controllers responsible for the mapping of (the same kind of) resources to the functionality provided by the underlying cloud infrastructure, like load balancers.
+The implementation is fixed for the context of the usage of the data plane, but depending on the kind of general target environment used for the given context. In this scenario, there is still one controller implementation, but it differs from context to context. In Kubernetes an example for this pattern is the Cloud Controller Manager. It hosts controllers responsible for the mapping of (the same kind of) resources to the functionality provided by the underlying cloud infrastructure, like load balancers. In one cluster this mapping is always the same, but it might differ from cluster to cluster, depending on the cloud infrastructure the cluster is running on. This will be called *context-sharding*.
 
   <p align="center">
   <img src="./media/contexts.png" style="width:50%" />
   </p>
 
-Technically it is basically the basic scenario when considering a single data plane. Like this it does not require sharding information in the resource. Therefore, this flavor does not need to be considered as separate controller pattern.
+Technically it is basically the standard scenario when considering a single data plane, but we already require different controller implementations. Like this it does not require sharding information in the resource. But it requires to identify a common uniform specification applicable for all potential environment types. Sometimes it is required to provide an extension mechanism to extend the specification part by environment specific information (see below for more details).
 
-The interesting second sharding flavor is given by the wish to be able to choose among multiple alternative implementations in a single data plane context. It will be called *implementation sharding pattern*. In Kubernetes, you can have in parallel multiple *Ingress* implementations, which share the same semantics. Therefore, all variants are represented by the same resource type describing the abstract features, which might be implemented in different ways. Again, we need a hook in the resource specification, which can uniquely assign a resource to an implementation variant (represented by the controller). If not foreseen by the resource, this is typically achieved by using dedicated annotations like a class field.
+An interesting second sharding flavor is given by the wish to be able to choose among multiple alternative implementations in a single data plane context. It will be called *implementation sharding pattern*. In Kubernetes, you can have in parallel multiple *Ingress* implementations, which share the same semantics. Therefore, all variants are represented by the same resource type describing the abstract features, which might be implemented in different ways. Again, we need a hook in the resource specification, which can uniquely assign a resource to an implementation variant (represented by the controller). If not foreseen by the resource, in Kubernetes this is typically achieved by using dedicated annotations like a class field.
 
-This mechanism is also used to add few simple configuration attributes, but it prohibits format value checks.
+This mechanism is also used to add few simple target environment specific configuration attributes, but it prohibits format value checks.
 
   <p align="center">
   <img src="./media/impl-sharding.png" style="width:50%" />
@@ -115,28 +129,32 @@ All applications of the basic pattern imply, that all aspects of an implementati
 
 Even before a Pod can be implemented at all, it must be assigned to a Node, which is also done by a separate controller, the (Pod) scheduler. It looks for Nodes with free capacity and taints applicable to the Pod requirements and assigns a matching Node by setting an appropriate attribute in the Pod specification.
 
-The general pattern will be called *aspect controller pattern*, where multiple different controllers are responsible for different aspects of a resource.
-The Kubernetes example shown above already illustrates two different sub patterns for this aspect pattern:
-
   <p align="center">
   <img src="./media/aspect-impl.png" style="width:50%" />
   </p>
 
-- a controller is used to *implement* a particular aspect of a resource. The controller is responsible for this *aspect of a resource*, not for the entire resource implementation. This pattern will be called *aspect implementation pattern*
+The general pattern will be called *aspect controller pattern*, where multiple different controllers are responsible for different aspects of a resource.
+
+But there are basically two ways aspects of a resource can be handled by a controller.
+The Kubernetes example shown above already illustrates both of them:
+
+- a controller is used to *implement* a particular aspect of a resource in a target environment. The controller is responsible for this *aspect of a resource*, not for the entire resource implementation. This pattern will be called *aspect implementation pattern* and the controller is a *aspect controller* (because it implements only part of a resource in a particular target environment).
 
   <p align="center">
   <img src="./media/aspect-enrich.png" style="width:50%" />
   </p>
 
-- a controller used to *enriches* a resource by additional information. In Kubernetes, for example, the scheduler is a controller modifying Pods (The Node aspect) (by assigning them to a Node) based on information provided by the Pod and the available Node objects used as side resources. It does not implement a resource, but it *provides information* for the specification of a resource required by the main controller responsible for it. This pattern will be called *aspect enrichment pattern*.
+- a controller used to *enrich* a resource by additional information. In Kubernetes, for example, the scheduler is a controller modifying Pods (The Node aspect) (by assigning them to a Node) based on information provided by the Pod and the available Node objects used as side resources. It does not implement a resource, but it *provides information* for the specification of a resource required by the main controller responsible for it. This pattern will be called *aspect enrichment pattern* and the controller is a *attribute controller* (because particular attributes of a resource will be maintained, but not implemented).
 
 <p align="center">
   <img src="./media/logical.png" style="width:50%" />
   </p>
 
-This leads to another kind of controller, *logical controllers* Instead of mapping a resource to some implementation elements using an API of some external target environment, a controller might provide the required functionality by falling back to the data plane, again. It just creates or manipulates other resources, which together are used to implement the resource. This is some kind of cascading. We will see more about this in the next section. An example in Kubernetes for such a cascading are *Deployments*. They are implemented by *ReplicaSets*, which are then finally implemented by *Pods*. Only the last element is implemented in a real physical environment, as containers on a container engine using the operating system of a node. The two upper layers just manage other resources by creating, deleting and modifying them in a coordinated way over time to achieve scaling or a rolling update.
+This directy leads to another kind of controller, *logical controllers* Instead of mapping a resource to some implementation elements using an API of some external target environment, a controller might provide the required functionality by falling back to the data plane, again. It just creates or manipulates other resources, which together are used to implement the resource. This is some kind of cascading. We will see more about this in the next section. An example in Kubernetes for such a cascading are *Deployments*. They are implemented by *ReplicaSets*, which are then finally implemented by *Pods*. Only the last element is implemented in a real physical environment, as containers on a container engine using the operating system of a node. The two upper layers just manage other resources by creating, deleting and modifying them in a coordinated way over time to achieve scaling or a rolling update.
 
 All those patterns can be combined, for example, the scheduler combines the usage of side resources with the aspect enrichment pattern. Another example are the network plugins in Kubernetes, which are responsible for implementing the chosen flavor of the Pod-to-Pod networking (for example calico). This also is an appliance of the aspect implementation pattern in combination with the environment sharding pattern, because there is again one instance of the controller per node (*DaemonSets*), responsible for the network configuration on this node.
+
+Am more comprehensive classification of controller types can be found in [Basic Kubernetes Concepts](../kubeconcept/README.md). Here I focus on the aspects relevant for the resource layout. 
 
 ## Target Environments
 
