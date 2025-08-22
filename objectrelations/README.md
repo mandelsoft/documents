@@ -5,7 +5,7 @@ But despite all these mechanisms, it is not possible to enable or prevent the es
 
 ## Object Relations
 
-An important concept in Kubernetes is the possibility to establish relations between two objects. This is typically done by preparing the manifest structure of a resource type to include referential information to another object. With its resource type (kind and api group), a namespace and an object name, every object in a Kubernetes dataplane has a unique identity over space (not time). The same name could be reused later in time to create a new object, after the old one has been deleted.  Additionally, it features UID, which is also unique over time.
+An important concept in Kubernetes is the possibility to establish relations between two objects. This is typically done by preparing the manifest structure of a resource type to include referential information to another object. With its resource type (kind and api group), a namespace and an object name, every object in a Kubernetes data plane has a unique identity over space (not time). The same name could be reused later in time to create a new object, after the old one has been deleted.  Additionally, it features UID, which is also unique over time.
 Typically, the named identity is used to describe such referential fields. A typical example is an object representing a digital twin for a real world object requiring some credential to be used.
 
 > In Kubernetes itself, the most prominent example is using a `Secret`, for example by a `Pod`, which uses container images loaded from an image repository. This might require credentials. Therefore, the Pod has a specification field `imagePullSecrets`.
@@ -20,13 +20,13 @@ Typically, the UID is not used, because this would require to adapt all using ob
 
 > Kubernetes provides with `k8s.io/api/core/v1.ObjectReference` even a standard type for the layout of a resource specification.
 
-So, what we can see, an explicit object relation in the Kubernetes Resource Model (KRM) is typically established by a field in the using resource. It is a tupe *(s,r,t)*, wher *s* is the source object, holding the reference, *r* is the *relation type*, the meaning or *purpose* the referenced object should be used for by *s*, and *t* is the *target* object of the relation, the referenced object.
+So, what we can see, an explicit object relation in the Kubernetes Resource Model (KRM) is typically established by a field in the using resource. It is a type *(s,r,t)*, where *s* is the source object, holding the reference, *r* is the *relation type*, the meaning or *purpose* the referenced object should be used for by *s*, and *t* is the *target* object of the relation, the referenced object.
 
 More complex n-ary relations are not used, although an object featuring multiple binary relations could be seen as an n-ary relation *(s,r,t<sub>1</sub>,...t<sub>n</sub>)*, where *r* is the resource type. So, it is sufficient to deal with binary relations.
 
 ### Why restricting object relations.
 
-A controller responsible for a resource type uses the given referenced object to implement the object in the real work (or its target environment) using the content of the referenced resource or its real world instance, It does not know, and it cannot know, whether this should be allowed or not. Therefore, there must be a way to prevent establish a relation, which should not be possible.
+A controller responsible for a resource type uses the given referenced object to implement the object in the real work (or its target environment) using the content of the referenced resource or its real world instance, It does not know, and it cannot know whether this should be allowed or not. Therefore, there must be a way to prevent establish a relation, which should not be possible.
 
 For example, a secret describes the access to a technical environment, which should not be usable by all objects of a resource type describing a relation to such an environment.
 
@@ -35,7 +35,7 @@ The first impression is, that this could be the task of the
 authorization environment used to authorize modification (or creation) operations on objects. Only selected actors (principals in authorization systems or subjects in Kubernetes) should be able to establish particular relations by setting the reference field accordingly. This assumption may be true within a trust domain, but not when objects from multiple trust domains are involved. An object should usable from a particular sets of other namespaces, but not accessible for users in those namespaces, regardless whether they have admin privileges or not.
 
 In Kubernetes a namespace is a trust-domain for authorizations on namespaced resources. Let's assume we are mainly talking about such resources. One idea of such a trust domain in Kubernetes is, that authorizations can be managed by domain-local administrators. This is fine, as long as both involved object live in the same namespace. The admin could explicitly grant permissions for establishing particular relations for selected users, or no user,if the relation should generally not be possible. The only requirement is to have such a fine-grained access control. With *Validating Admission Webhooks* this would basically be possible even today, but not bóu-of-the-box.
-[Later](#operation-authorization-and-resource-validation-in-kuberbetes) we will see what is possible and what not. But our problem is not limited to objects in a single namespace.
+[Later](#operation-authorization-and-resource-validation-in-kubernetes) we will see what is possible and what not. But our problem is not limited to objects in a single namespace.
 
 If we try to solve the general problem with authorizations in a single trust domain, the domain admin would be able to enable the usage of any object of any other namespace. But this is definitely not intended. We need a separation of responsibility.
 The trust domain of the potentially usable object must be the authorization domain for granting the possibility to use objects in this domain by other domains (here namespaces). And the admin of the using domain should be responsibility do enable particular actors to establish such a relation, but only if it hb been granted by the providing domain.
@@ -107,7 +107,7 @@ The focus here lies on the validation of the given resource manifest. This is im
 
 But the admission API also provides information about the requesting subject. THis way it can not only be used for manifest validation, but it can also reject modifications not allowed for the requesting user. Therefore, validating admission webhooks can de-facto also be used to implement operation authorizations. Because they are only called for modifications, read-authorizations cannot be handled.
 
-This kind of hybrid-functionality is therefore not sufficient to really implement an authorization system based on attribute based conditions, it is basically only valid for value validation and it [mixes validation with authorizations](#separation-of-operation-authorization-and-value-validation).
+This kind of hybrid-functionality is therefore not sufficient to really implement an authorization system based on attribute based conditions, it is basically only valid for value validation, and it [mixes validation with authorizations](#separation-of-operation-authorization-and-value-validation).
 
 Another possibility to gain full control over such an extensive validation is to implement an API group by an extension api server (or aggregated API server) instead of a set of regular controllers.
 
@@ -116,7 +116,7 @@ Another possibility to gain full control over such an extensive validation is to
 As of version v1.30 Kubernetes supports Validation Admission Policies. They were introduced to replace the need for coding Validation Admission Webhooks with a standardized declaration-based approach controlled via regular resources.
 
 It is based on two new resources `ValidatingAdmissionPolicy` and ValidatingAdmissionPolicyBinding`, both are cluster-scoped.
-A policy desclares validation rules on some resource types.
+A policy declares validation rules on some resource types.
 
 > ```yaml
 > apiVersion: admissionregistration.k8s.io/v1
@@ -220,7 +220,7 @@ But this is not the requirement. Fortunately the namespace of a
 parameter resource can be fixed to the providing namespace (namespace1).
 It then can use a local object to release, for example, a secret to other namespaces by listing the grants.
 
-The policy now checks whetjer the requested
+The policy now checks whether the requested
 > ```yaml
 > apiVersion: admissionregistration.k8s.io/v1alpha1
 > kind: ValidatingAdmissionPolicy
@@ -341,14 +341,14 @@ It is something completely different, whether a particular user is allowed to se
 The sole task of value validation is to avoid the setting of field/value combinations of an object which is not valid or possible.
 
 But having a closer look this is not a single task. Whether a field/value combination may depend on two different kinds of constraints arising from two different responsibilities:
-- *Domain Validation*: The resource type has a particular meaning determined. And this meaning implies constraints for value and field combinations. For example a component of a RGB color value is always a number in the range 0<=x<=255. This has nothing to do with the context the color should be used, it is completely defined by the meaning behind the element (although it might technically be an integer). Or those constraints might be given by the underlying elements of the real world finally represented by the resource object.
+- *Domain Validation*: The resource type has a particular meaning determined. And this meaning implies constraints for value and field combinations. For example a component of an RGB color value is always a number in the range 0<=x<=255. This has nothing to do with the context the color should be used, it is completely defined by the meaning behind the element (although it might technically be an integer). Or those constraints might be given by the underlying elements of the real world finally represented by the resource object.
 - *Context Validation*: A particular resource object might be used in a concrete context. This context is typically identified by some label, annotation of field setting defined by an application or group of users in a namespace. There may be any number of such contexts per cluster. The task here is to be able to limit field/value combinations according to requirements of this usage context. Those limitations are not intrinsic to the resource type.
 
 As we can see both kinds of limitations are subject to different areas of responsibility. While the constraints for the domain validation are arising from the resource type itself and are the same and enforced for every object for every application of this resource type in a cluster, the context constraints are arising from the usage of particular resources in a particular cluster.
 So, responsible for the first flavor is the provider of a resource type, and for the seconds flavor some principals in a particular cluster. In the first case, all objects are (and must be) affected, in the second only objects that belong to a specific context.
 
 This differentiation must be reflected in the API used to declare such validations.
-This first one is usefully part of the schema definition of the resource type wherever possible. More dynamic checks, for example checking value transitions, can be done by more expressive elements. In this are Validating Admission Webkooks and Validating Admission Policies can be used. They are valid cluster-wide. But they should no check context constraints.
+This first one is usefully part of the schema definition of the resource type wherever possible. More dynamic checks, for example checking value transitions, can be done by more expressive elements. In this are Validating Admission Webkooks and Validating Admission Policies can be used. They are valid cluster-wide. But they should not check context constraints.
 
 The second kind of constraints must be declarable by principals
 responsible for particular usage contexts, typically inside a namespace. And here we easily can see, that Validating Admission Policies cannot be used, because they are cluster-scoped resources. And this although, concerning their expressiveness, they would be able to describe such constraints. So, the design of this new mechanism is not applicable for a common use case according the semantics of the problem domain, it is just an adaptation of the already existing mechanism of Validating Admission Webhooks. To use it to solve the context problem, you have to leave your trust-domain and require cluster privileges.
@@ -381,13 +381,13 @@ These basic requirements mut be reflected in design of the description layer for
 What should be describable for authorizations and how should those descriptions be organized? Let's have a look at the existing mechanisms.
 
 RBAC is able to answer the question, who is able to execute a particular operation on an object. Here, only the operation type (like GET,PUT,...) and the identity of the concerned object is taken into account. The RBAC system uses `Role`s to describe permissions for objects inside a namespace and appropriate `RoleBinding`s to assign those roles to subjects. Both kinds of resources live in a namespace.  `ClusterRole`s and `ClusterRoleBinding`s are cluster-scoped objects and used to maintain cluster wide permissions
-on cluster-scoped or namespaced objects. This structure allows to asign namespace-only permissions to dedicated subjects and therefore meets the above requirements (point 1 is not considered here in detail).
+on cluster-scoped or namespaced objects. This structure allows to assign namespace-only permissions to dedicated subjects and therefore meets the above requirements (point 1 is not considered here in detail).
 
 To maintain authorizations in finer granularity than referring to namespaces and objects within is not really possible.
 
-With validation admission webhooks only modifying requests can be handled, but no read, watch or list requests. Basically they should only be used to handle value validation, but can technically used for implementing write authorization models. They don't have a description layer, they are just specific implementations.
+With validation admission webhooks only modifying requests can be handled, but no read, watch or list requests. Basically they should only be used to handle value validation, but can technically be used for implementing write authorization models. They don't have a description layer, they are just specific implementations.
 
-Validating Admission Policies are a dedicated implemenation of a an validation admission webhook and therefore underly the same constraints. Their task is offer a formal declarative configuration with resource objects to describe again, value chackes as weel as write authorizations.  They allow to describe modification authorizations based on labels, annotations and fields and their values of modified objects. But there are several more severe constraints:
+Validating Admission Policies are a dedicated implementation of a validation admission webhook and therefore are subject to the same constraints. Their task is offer a formal declarative configuration with resource objects to describe again, value checks as well as write authorizations.  They allow to describe modification authorizations based on labels, annotations and fields and their values of modified objects. But there are several more severe constraints:
 - it is not possible to follow relations between objects. For example: you may establish only a reference to a secret with a particular label value.
 - in contrast to RBAC roles and bindings, such policies cannot be maintained under the control of a namespace, their maintenance always requires a cluster admin. All description types are cluster-scoped.
 
@@ -401,9 +401,9 @@ is not generally suitable for solving authorization problems.
 But even under the assumption that attribute-based conditional authorizations (Cedar does support even to follow references) would be available, would it be possible to resolve our referencing object problem?
 
 Here, we have to see that regular authorizations always authorize principal to do something, for example setting a reference field to a dedicated value. But as we have seen in previous section,
-the problem is primarily not related to the question, *who* may establish a reference, but is such a reference allowed, it's some kind of context validation.
+the problem is primarily not related to the question, *who* may establish a reference, but is such a reference allowed, it's some kind of context validation. It is not a restriction for operations at a given point in time, but for the desired state over time, even for changed permissions.
 
-### Solving object relation constraints with traditional  Authorization
+### Solving object relation constraints with traditional Authorizations
 
 But even if we would be content with such an authorization solution, we still have the problem with the responsibility. Authorizations
 of such kind are either maintained in a namespace for objects in this namespace or by cluster wide settings, which require some cluster-wide permissions. This is definitely not what the problem domain requires.
@@ -433,7 +433,7 @@ Because of this the introduction of conditions is not a precondition for the sup
 it could very likely also be used to implement the basic authorization checks for object relations (using objects also as principal).
 But this is not required, neither for the description layer nor for the way those checks have to be executed. The description layer can ba extended to offer appropriately extended policies and the check execution does not (need to) know anything about the policy declaration.
 
-But there is another crucial point. If relations should be validated, it must be possible to identify those relations at the place the are defined, the resource manifest. If we don't want to fall back to the need of describing values of fields with simple data types, but use a more logical relation view in our description layer, the API model must be able to describe, what fields hold a reference, how it is specified and what is its purpose (the relation kind). Only this way it is possible for the API server to map the logical view, object X uses object Y with purpose R, to field values in a resource manifest.
+But there is another crucial point. If relations should be validated, it must be possible to identify those relations at the place they are defined, the resource manifest. If we don't want to fall back to the need of describing values of fields with simple data types, but use a more logical relation view in our description layer, the API model must be able to describe, what fields hold a reference, how it is specified and what is its purpose (the relation kind). Only this way it is possible for the API server to map the logical view, object X uses object Y with purpose R, to field values in a resource manifest.
 
 ### Declaration Layer
 
@@ -487,10 +487,10 @@ roleRef:
   name: ingres-dns-access
 ```
 
-The usagge context the access is granted is herby represented by the referenced role. For ObjectRole those references must always be namespaces, because they have to be able to grant access to contexts outside the own namespace.
+The usage context the access is granted is herby represented by the referenced role. For ObjectRole those references must always be namespaces, because they have to be able to grant access to contexts outside the own namespace.
 
 
-This is very basic model similar to RBAC, let's call it OBAC (Object Based Access Control).
+This is a very basic model similar to RBAC, let's call it OBAC (Object Based Access Control).
 
 If later a new general authorization engine is used, it can also be fed by those rules. If conditions are possible the extension can be done similar to the extension done to RBAC (or an appropriate replacement).
 
@@ -499,6 +499,77 @@ We should avoid to be too fast with OBAC and introduce features not available to
 ### Permission Enforcement
 
 The declaration layer part is the easiest part of some relational authorization system. The much harder part is the enforcement of the described permissions.
+
+First of all it must be part of the validation system of the API server.
+When creating an object or update an object, the API server must enforce
+that all constraints induced by relational authorizations are met.
+In this sense it is handles like regular operational permission checks.
+
+But operations are done if they are finished, so permission checks can be done directly for a dedicated operation. Once a permission is rejected later, the next operation execution would be checked against the now updated authorizations. So, once a user with an appropriate permission has changed an attribute and the permission is rejected later, this has no influence on the object state.
+
+But this must be different for relational authorizations. This kind of authorization does not restrict operations at a given point in time, but the desired state of on object according to the authorizations at the time of usage. So, a desired state that valid at a point in time may be invalidated once a permission is rejected later.
+
+Therefore, the API server can only enforce that a no invalid states are created, but not that the once configured state is always valid. There may be object with a configuration, which are not valid, despite API server checks.
+
+THis finally means authorization enforcement always involves the controller implementing this resource type or better any accessor of the resource.
+
+The configured resource reference is not a problem as such, it only becomes a problem if the information of the referenced object is used.
+There are two possibilities for such a usage:
+It is read by some principal. In general this is no problem as long as the principal has read permissions. The problematic question is, what is done with this information.
+
+Restricting the usage of an object by another object semantically means,
+that the implementation of the using object may not be implemented under consideration of the reference object. But this constraint can only be guaranteed by the controller responsible for this part of the object implementation.
+
+Therefore, the final check, regardless whether the API server validates modifications, must always be done by the controller. The API server could just provide an API to recheck the usage relations.
+
+This has pros and cons:
+The positive effect is, that such system can be established without any 
+API-server change, just by providing a service able to answer whether a particular relation is valid or not. Even the formal representation of references in the API model would not be required, because the controller knows what objects it has to access for which purpose and could emit appropriate questions.
+This would also enable the support of induced dependencies. If a controller implicitly derives some dependencies from the object state,
+it can emit those question, also, to meet the authorized usage constraints.
+
+The negative effect is for sure, that the controller is involved at all in those checks, which requires a reimplementation of all controllers.
+
+Despite the possibility to implement such a model without the API server,
+it has advantages to offer an API server support. There would be one service, the API server the controller can contact for all its Kubernetes related information. The answered question could be generalized to, is the object manifest valid, regardless of a particular relation type. If the state is invalid the real-world elements for this object should not be touched anymore. And in general, having formal knowledge about reference would be helpful for other tools, especially for the attribute-based operational authorization model.
+
+#### Cooperation between Operational and Relational Authorization.
+
+Let's assume we want to provide API server support for relational access control. How could this look like, and is there a possibility to circumvent the need for special support by the controller.
+
+One problem with controllers and operational authorizations is due to the nature of a controller. A typical controller is singleton responsible 
+for all objects of a particular resource type. The exceptions are [environment sharded controllers](../kubeconcept/README.md#controller-organization). 
+The general problem to be solved is, that a controller should only be authorized to access objects it requires for its work. But those objects are not only instances of its resource type, but all other kinds of objects, also, which could be referenced by an object. Because this assignment is dynamic, the controller needs at least general read permissions for those resource types. This means, for example, a controller has access to all secrets, once its resource type requires a secret reference, regardless whether a particular secret is referenced or not.
+
+For special cases like the kubelet, which is a sharded controller, there is a special implementation by the API server (node authorizer), which knows the resource structure and meaning and rejects the usage of any object not related to this node.
+
+But basically it would be useful to generalize those checks, and this would require a formal representation of referential fields as part of the API model, again. So, there are many reasons for such an extension of the API model.
+
+But the problem somehow relates to our relational authorizations.
+Both could cooperate, in the sense that a principal (here the controller) has only access to a resource of a type which could be referenced, not only, if there is such a reference, but also if this reference is authorized.
+
+This way a controller could not access the referenced object, although there is a reference to this object in its resource object.
+
+Sounds good? Have we found a solution to avoid special adaptation of every controller?
+
+Unfortunately this would not be enough, because this feature would only restrict the usage of the set of objects potentially usable by the controller for all of its resources. So, if there is an object, which is authorized to use a particular other object, the controller could generally access this object, regardless of the object it is actually reconciling. Usage restriction could not be enforced.
+
+So, what is required to solve this problem, is an access control with privilege escalation. A request to the API server must be done under the identity and the authorizations of the reconciled object. The controller acts on-behalf of the reconciled object.
+
+Once we have an implementation engine unifying principals and resources. it would also be possible to grant operational authorizations for objects. The controller would get only permissions for its resource type, and any other object must be accessed under the identity of the reconciled object, which must be authorited to have appropriate operational permissions (This can also be write permissions).
+
+If we then have conditional authorizations and the formal representation of references, objects could be authorized to read this object by a simple single policy. Once such (operational) checks are done they can easily be extended to also incorporate the relational authorizations: a referenced object may only be accessible by a controller acting on-behalf of this object, if this object has configured an appropriate reference AND it is authorized to use it for the formal relation defined by the field holding the reference. 
+
+Voilà, we have an authorization system, which handles both kinds of authorizations in a combined manner (but with different domain specific description layers)
+and is able to enforce those permissions by supporting impersonations as an object. 
+
+The only additional element required are impersonation permissions, a controller gets access and impersonation permissions for objects of its type.
+
+For sure, controllers still have to be adapted accordingly. But this adaption would be independent of a special authorization feature. It solves authorization access and proliferation problems for both kinds of access control in a way transparent for the controller.
+
+**Remark**: Although such a concept aligns the access checks for controllers, it is not possible to use the same declaration layer for both kinds of authorizations, because of the different responsibility domains for the maintainer of those resources.
+
+
 
 
 
