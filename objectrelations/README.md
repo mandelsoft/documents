@@ -585,8 +585,16 @@ For sure, controllers still have to be adapted accordingly. But this adaption wo
 
 **Remark**: Although such a concept aligns the access checks for controllers, it is not possible to use the same declaration layer for both kinds of authorizations, because of the different responsibility domains for the maintainer of those resources.
 
+#### Watching Side Resources
 
-
+A common behaviour of controllers is to watch potentially referenced side resource types
+- to build an index what main resource to reconcile, if a referenced side resource changes.
+- to resolve references to formerly unknown side resources.
+The typical usage is to trigger reconcilation of the involved main objects.
+Such a work with privilege escalation, because it cannot be done under the identity of a particular
+object. There are two basic possibility to solve this problem:
+- watch requests only report the set of all authorized and reference side resources
+- because the API server now knows about relations, those watches and the index building could be avoided at all for a controller. If an authorized referenced resource changes the reference resource is reported by the main watch of a controller.
 
 
 
