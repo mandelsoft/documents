@@ -8,7 +8,7 @@ But despite all these mechanisms, it is not possible to enable or prevent the es
 An important concept in Kubernetes is the possibility to establish relations between two objects. This is typically done by preparing the manifest structure of a resource type to include referential information to another object. With its resource type (kind and api group), a namespace and an object name, every object in a Kubernetes data plane has a unique identity over space (not time). The same name could be reused later in time to create a new object, after the old one has been deleted.  Additionally, it features an UID, which is also unique over time.
 Typically, the named identity is used to describe such referential fields. A typical example is an object acting as digital twin for a real world object requiring some credential to be used.
 
-> In Kubernetes itself, the most prominent example is using a `Secret`, for example by a `Pod`, which uses container images loaded from an image repository. This might require credentials. Therefore, the Pod has a specification field `imagePullSecrets`.
+> In Kubernetes itself, the most prominent example is using a `Secret`, for example by a `Pod`, which uses container images loaded from an image repository. As this may require credentials, the Pod has a specification field `imagePullSecrets`.
 
 Such a referential field might have several manifestations:
 - it must at least describe the name of the used object. This is possible if the resource type is implied by the meaning of the field (for example the image pull secret reference is always a reference a `Secret` resource.)
@@ -19,6 +19,15 @@ Such a referential field might have several manifestations:
 Typically, the UID is not used, because this would require to adapt all using objects, if accidentally the referenced resource has been deleted and recreated.
 
 > Kubernetes provides with `k8s.io/api/core/v1.ObjectReference` even a standard type for the layout of a resource specification.
+
+>```yaml
+> secretRef:
+>    apiVersion: v1       # API version of the referenced Secret
+>    kind: Secret         # Kind of the referenced object
+>    name: my-secret      # Name of the Secret
+>    namespace: default   # Namespace
+>    uid: 12345678-90ab-cdef-1234-567890abcdef
+>```
 
 So, what we can see, an explicit object relation in the Kubernetes Resource Model (KRM) is typically established by a field in the using resource. It is a type *(s,r,t)*, where *s* is the source object, holding the reference, *r* is the *relation type*, the meaning or *purpose* the referenced object should be used for by *s*, and *t* is the *target* object of the relation, the referenced object.
 
