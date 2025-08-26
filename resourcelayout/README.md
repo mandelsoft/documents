@@ -334,26 +334,28 @@ Unfortunately, this is not possible for typed sub structures. Although it is a c
 
 For the implementation sharding additionally a mechanism is required to assign resources to dedicated implementations (controllers). This is either handled by an explicit field, for example by the type of extension field (if available) or by annotations as explained earlier. Those annotations are also used to configure some parameterization, if no extension field is foreseen (for example in Ingress resources in Kubernetes).
 
-This kind of information is not part of the self-describing features of the Kubernetes data plane. It would be extremely helpful, if the implementations for a polymorphic resource could be declared like new resource types. Similar to CRDs this could be done by an *ImplementationClass* resource combined with a formalized extension field in the resource in question.
+This kind of information is not part of the self-describing features of the Kubernetes data plane. It would be extremely helpful, if the implementations for a polymorphic resource could be declared like new resource types (for example for ingress controller variants). Similar to CRDs this could be done by an *ImplementationClass* resource combined with a formalized extension field in the resource in question.
 
 
   <p align="center">
   <img src="./media/ICD.png" style="width:60%" />
   </p>
 
+It would be possible to establish a standard to describe such a kind of implementation class, for example by defining a standard field `class``, which describes the intended implementation class. This field includes the specifcation of an implementation type. Basically the usual API group synta can be used. In the example this is `special.example.com/v1`, where `v1` describes the used format version.
 
-Similar to the CRD this declaration defines the name and the structure of this extension field and the values used to select a dedicated implementation (for example a simple type field with the identifying value).
+Similar to an CRD an `ImplemantationClassDefinition` resource type is introduced. It describes for every extension class, given by its name (`special.example.com`). In its specification it contains information for which resource type it is intended for, and it described the supported format version using the usual OpenAPI specifications already known from the CRDs.
 
-It could also define additional extension fields in the main resource together with structural alternatives.
 
 
   <p align="center">
   <img src="./media/EFD.png" style="width:60%" />
   </p>
 
-A similar mechanism could also be used to describe valid structures for extension fields for variable configuration fields (the second case from above). The field paths for the extension fields must be defined in the CRD. The CRD defines the set of extensions supported by a resource by defining an extension name and assigning it to a field of the described resource. Separate *ExtensionFieldDefinition* resources can dynamically be added like CRDs, and declare which extension of a resource type is described as well as the structure of th extension. In the resource the type field of the extension field specifies the extension type to use according the name of the extension field definition.
+A similar mechanism could also be used to describe valid structures for extension fields for variable configuration fields (the second case from above). The CRD defines the set of extensions supported by a resource by defining an extension name and assigning it to a field of the described resource. Like the `class` field from above must at least contain a type field (potentially configurable), it is used to identify the type of the configured extension, described by a separate *ExtensionFieldDefinition* resource. Those resources can dynamically be added like CRDs, and declare for which resource and extension type it is intended, as well as the structure versions for the extension attributes. In the resource the type field of the extension field specifies the extension type to use according the name of the extension field definition.
 
 This way the data plane would be completely self-descriptive and queryable. Especially it would be possible to determine which implementations are possible for a resource following the sharded implementation pattern. And variadic field content could be validated when applying manifests.
+
+Both kinds of extensions could be brought together and described by the same mechanism, if a standard extension type, for example `class`, is used to define an implementation class extension, which is then used to describe the extension attributes, as well as the selecting key for the implementation sharding.
 
 
 
