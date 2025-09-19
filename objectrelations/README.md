@@ -356,6 +356,7 @@ For example a component of an RGB color must be in the range of [0,255], regardl
 The sole task of value validation is to avoid the setting of field/value combinations of an object which is not valid or possible.
 
 But having a closer look this is not a single task, it can be divided into two different sub-realms. Whether a field/value combination is valid may depend on two different kinds of constraints arising from two different responsibilities:
+
 - *Domain Validation*: The resource type has a particular meaning, which determines the meaning of fields in its resource manifest. And this meaning implies constraints for value and field combinations. In our [RGB example](#rgbexample) this has nothing to do with the context the color should be used, it is completely defined by the meaning behind the element (although it might technically be an integer). Or those constraints might be given by the underlying elements of the real world finally represented by the resource object.
 - *Context Validation*: A particular resource object might be used in a concrete context. This context is typically identified by some label, annotation or field setting defined by an application or group of users in a namespace. There may be any number of such contexts per cluster, with different logical constraints. The task here is to be able to limit field/value combinations according to requirements of this usage context. Those limitations are not intrinsic to the resource type.
 
@@ -369,9 +370,10 @@ The second kind of constraints must be declarable by principals
 responsible for particular usage contexts, typically inside a namespace. *They are provided by users of a resource type.* And here we easily can see, that Validating Admission Policies cannot be used, because they are cluster-scoped resources. And this although, concerning their expressiveness, they would be able to describe such constraints. So, the design of this new mechanism is not applicable for a common use case according the semantics of the problem domain, it is just an adaptation of the already existing mechanism of Validating Admission Webhooks. To use it to solve the context problem, you have to leave your trust-domain and require cluster privileges.
 
 For sure, those two kinds of constraints have nothing to do with 
-the wish to restrict users in a context or trust domain to set specific values or value combinations. For example, only selected users should be able to set a high priority. All those values are valid in the context, but not all users may be allowed to set those values.
+the wish to restrict users in a context or trust domain to set specific values or value combinations. For example, only selected users should be able to set a high priority. All those values, including those special ones, are valid in the context, but not all users may be allowed to set those values.
+And second, the possible set of values or value combinations in a context is a subset of the possibilities allowed by the domain validation.
 
-A basic takeaway is, that it would be a good practice to use some *Policy* resources only for context-related constraints. And handling of such resources must be authorizable locally to the related namespace. This expresses the local character of such constraints in contrast to constraints intrinsic to a particular resource type.
+A basic takeaway is, that it would be a good practice to use some *Policy* resources only for context-related constraints. And handling of such resources must be authorizable locally to the related namespace. This expresses the local character of such constraints in contrast to constraints intrinsic to a particular resource type. And this validation is different from the authorization to do particular changes, although this is also a context-local decision.
 
 Returning to our initial problem with cross-namespace references we can see the following:
 - the resource structure and the domain validation should allow and accept such references, because there is no technical constraint against it. 
@@ -605,6 +607,35 @@ object. There are two basic possibility to solve this problem:
 - watch requests only report the set of all authorized and reference side resources
 - because the API server now knows about relations, those watches and the index building could be avoided at all for a controller. If an authorized referenced resource changes the reference resource is reported by the main watch of a controller.
 
+## Security Considerations
 
+In the previous sections we have seen that there is a fundamental (semantic) difference between authorization access control and data validation, even if the behind the scenes similar or even the same technical mechanism can be used for the implementations. This will be even more obvious when security aspects are included.
+
+The access control mechanism needs access to all relevant information required for the decision.  Therefore, it seems to be a good idea to do NOT require access to sensitive information for this decision. Otherwise, every webhook (extension) would be fed with this information in an unchecked way. So, it would be a systenm component having potential access to all objects without any restrictions or control mechanisms. That is the reason why the authorization extensions in Kubernetes work on request metadata only. And even this metadata is restricted to identity information of the involved respource (operation/verb, resource type, namespace and name, sub resource name). 
+
+It could be extended to provide further metadata like labels and annotations.
+But this is only possible without severe problems, if these elements are only used to store structural information, like the application an elements belongs to. But because of several technical limitations of the Kubernetes API model, especially  and labels are often used to store field content:
+- repeating information of regular fields to be able to be used as part of an index access
+- or they are used instead of fields to provide additional information for polymorphic implementation controllers requiring configuration information not covered by standard fields defined for the shared resource type. (for example using different ingress controller with a class annotation and additional implementation relevant information applicable only for a specific implementation).
+
+So, access control based on object attributes opens an additional recurity risk, because information is made available without any possibilities for influence or even auditing.
+
+One might say, this is not a problem: if the authorization check is compromised anyway, it makes no difference, because it then could grant regular access for particular users without any limitations. But although this is true, regular access would always still be subject to auditing. An analysis of the accesses can provide evidence of a security breach, which would not be possible if the audit system has been circumvented.
+
+This is a basic problem for attribute bases access control.A more subtle effect appears if not only attributes of the object is question are involved, but also objects referenced by this object. A scenario typically mentioned for this would be to allow establishing a reference only if the referenced object meets some requirements. This allows the regular outflow of information without regular access permissions.
+- if you can refine your permissions you can restrict such an operation for dedicated attribute values. If then an appropriate modification is possible, you know those attributes of a referencable object, although you don't have regular read permissions.
+- if you know the restrictions, you can check objects, if you cannot execute the operation, you that those objects feature those values.
+
+But back to the differentiation between authorization checks and value validation.
+The same problem seems to apply to the value validation hooks. But this is only true, if the value validation is misused for access control. There is a fundamental difference, while authorization checks are used for all operations and objects, a value validation (if it is really a [domain validation](#value-validation)) requires only access to the object state and this access is only required for objects of a particular type, the implementing controller has access to anyway. THis kind of validation if provided by technical means defined by the provider of the resource type (either part of the scheme, an extension API server, or a validation webhook especially for this resource type (or type group))
+
+More than a formal validation should typically be done by the implementing controller. This applies in particular to the check of relationships among different objects, for example, whether a referenced secret exists or provides the required fields. Such validations should never be statically be done together with the value validation during a modification operation, because other objects, maintained independently, are involved. It would prohibit the creation/maintenance of resource before other resources reach a dedicated state and therefore invalidate the Kubernetes principle to allow the deployment of resources in any order (with some principle-conditional exceptions, like the order of CRD and resource deployment). And, even more important, it would be worthless; it cannot guarantee consistency,  because the related resources could be changed later in an unappropriate way, leaving the complete mesh in an invalid state.
+
+A little bit different is the [context validation](#value-validation), because it indeed requires context information (as the name already implies). But teir task is not to hide things, like for the access control. but to prevent things.
+An appropriate mechanism could be secured by impersonation mechanisms shown in the previous section. 
+
+So, this is another path leading to the need of separationg authorization, including relational authorizations, from value validation. Also, the authorization to use particular objects to be referenced must consider such security risks.
+
+Because all of this it seems to be recommended, to design the relational authorizations similar to the already existing operational authorization system based on limited metadata, only, and independently of possible attribute based authorization extensions.
 
 
