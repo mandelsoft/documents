@@ -9,3 +9,4 @@ and learnings from this model applicable for other environmnets or scenarios
 - [Configuration and Installation reconsidered](config/README.md)
 - [*IaC* and *IaD* revisited](iac/README.md)
 - [API Model Design Patterns](resourcelayout/README.md)
+- [Object Relations in Kubernetes](objectrelations/README.md)
