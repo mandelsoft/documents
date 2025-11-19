@@ -11,14 +11,14 @@ Typically, the named identity is used to describe such referential fields. A typ
 > In Kubernetes itself, the most prominent example is using a `Secret`, for example, by a `Pod`, which uses container images loaded from an image repository. As this may require credentials, the Pod has a specification field `imagePullSecrets`.
 
 Such a referential field might have several manifestations:
-- it must at least describe the name of the used object. This is possible if the resource type is implied by the meaning of the field (for example, the image pull secret reference is always a reference a `Secret` resource.)
+- it must at least describe the name of the used object. This is possible if the resource type is implied by the meaning of the field (for example, the image pull secret reference is always a reference to a `Secret` resource.)
 - if objects of different types should be addressable, the type information must be included
-- if the object is namespaced and cross-namespace references should be possible, a namespace field must be included.
+- if the object is namespaced and cross-namespace references should be possible, a namespace field must be included. Because of security reasons, references are typically restricted to the local namespace (of the object holding the reference).
 - If uniqueness over time is required, an object UID can be used.
 
 Typically, the UID is not used because this would require adapting all using objects if accidentally the referenced resource has been deleted and recreated.
 
-> Kubernetes provides with `k8s.io/api/core/v1.ObjectReference` even a standard type for the layout of a resource specification.
+> Kubernetes even provides with `k8s.io/api/core/v1.ObjectReference` a standard type for the layout of a reference specification.
 
 >```yaml
 > secretRef:
@@ -29,9 +29,9 @@ Typically, the UID is not used because this would require adapting all using obj
 >    uid: 12345678-90ab-cdef-1234-567890abcdef
 >```
 
-So, what we can see, an explicit object relation in the Kubernetes Resource Model (KRM) is typically established by a field in the using resource. It is a type *(s,r,t)*, where *s* is the source object, holding the reference, *r* is the *relation type*, the meaning or *purpose* the referenced object should be used for by *s*, and *t* is the *target* object of the relation, the referenced object.
+So, what we can see, an explicit object relation in the Kubernetes Resource Model (KRM) is typically established by a field in the using resource. It is a tuple *(s,r,t)*, where *s* is the source object, holding the reference, *r* is the *relation type*, the meaning or *purpose* the referenced object should be used for by *s*, and *t* is the *target* object of the relation, the referenced object.
 
-More complex n-ary relations are not used, although an object featuring multiple binary relations could be seen as an n-ary relation *(s,r,t<sub>1</sub>,...t<sub>n</sub>)*, where *r* is the resource type. So, it is sufficient to deal with binary relations.
+More complex n-ary relations are not used, although an object featuring multiple binary relations could be seen as an n-ary relation *(s,t<sub>1</sub>,...t<sub>n</sub>)*, where the relation type is implied by the position of *t* and the resource type of *s*. So, it is sufficient to deal with binary relations extended by a relation type.
 
 ### Why restricting object relations.
 
