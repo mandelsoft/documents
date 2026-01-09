@@ -257,15 +257,22 @@ It is possible to distinguish three feature dimensions for aspects:
   
   an aspect may be a unique feature of a dedicated resource type, for example, in Kubernetes Pods feature containers and no other resource type has this feature. Or the aspect may be offered or required by multiple resource types. For example in [Flux](https:fluxcd.io), there are multiple resource types, the source types, providing access to a filesystem-like snapshot. Other resource types, the deployers, can refer to those aspects to access the content intended to be deployed.
 
-
 - *inbound or outbound*
 
   an aspect might require special configuration not derivable from common resource attributes. For example, access credentials are consumed via referenced Secret resources (which are also consumable by other resource types). Or the resource offers this aspect to be consumed by other resources. An example for this are again the source resource types in Flux.
 
+- *fixed type or polymorphic*
+
+  an aspect might have a fixed field structure like the containers in *Pods*, or it might be used to express one of several possibilities. An example can be the *loadbalancerClass* in Kubernetes *Service* objects. used to select one of multiple possible load-balancer implementations. Hereby, every variant typically requires its on attribute set.
+
+- *locally or externally managed*
+
+  An aspect might be pure data managed by the controller of the using resource, or it is managed by an own controller. For example, the node aspect of a *Pod* is managed by the *kube-scheduler*. Or the management of a resource completely or partly depends on a chosen variant of an aspect (especially for polymorphic aspects)
+
 As can be seen from the examples given, incarnations of the different dimensions can freely be combined.
 
-All those combinations could be solved by introducing specific parts in the main resource manifest. This works well for a fixed set of aspects. For example, in Flux the exported snapshot aspect is implemented by a fixed set of attributes in the resource status.
-But it does not work for an arbitrary number of aspects potentially unknown in advance. And there are even more problems with such an approach:
+All those combinations could be solved by introducing specific parts in the main resource manifest. This works well for a fixed set of aspects with a fixed type. For example, in Flux the exported snapshot aspect is implemented by a fixed set of attributes in the resource status.
+But it does not work for an arbitrary number of aspects potentially unknown in advance, or with polymorphic aspects with several alternatives. And there are even more problems with such an approach:
 
 - in contrast to the simple status feedback (the conditions), aspect-specific fields cannot be standardized for all potential aspect types. Therefore, their structure cannot be defined as a list of named aspects with a fixed structure as part of the main resource.
 
@@ -273,52 +280,61 @@ But it does not work for an arbitrary number of aspects potentially unknown in a
   <img src="./media/typed-extension.png" style="width:20%" />
   </p>
 
-  A solution here could be to extend the OpenAPI model supported by the API server managing the data plane to support some kind of slave types, resources defined by CRDs only usable as typed extensions, but not for main resources. The type field of the extension then would be the typical type identity of a resource (in Kubernetes the API group, version and kind). Such a structure is already often used for such scenarios, for example by the [Gardener](https://gardener.cloud). In the main resource aspects can then be represented by raw extensions. either as a dynamic list or with fixed field names.
+  A solution here could be to extend the OpenAPI model supported by the API server managing the data plane to support some kind of slave types, resources defined by CRDs only usable as typed extensions, but not for main resources. The type field of the extension then would be the typical type identity of a resource (in Kubernetes the API group, version and kind). Such a structure is already often used for such scenarios, for example by the [Gardener](https://gardener.cloud) to implement polymorphic parts of the resource manifest. In the main resource aspects can then be represented by raw extensions. either as a dynamic list or with fixed field names. The content is then specific for the chosen alternative.
 
-- when used as outbound aspects, there are consumers of this information, typically other resources. This requires the controllers of such consuming resources to know all the aspect providing resource types (and how the aspect is expressed in such resources), and to establish watches for them, which either prevents adding more combinations by configuration or requires dynamically establishing watches for changes of arbitrary resource types. The first is quite inflexible, and the second is quite complex and expensive for the overall system.
+- when used as outbound shared aspects, there are consumers of this information, typically other resources. This requires the controllers of such consuming resources to know all the aspect providing resource types (and how the aspect is expressed in such resources). Also, separate watches are those resources are required, which either prevents adding more combinations by configuration or requires dynamically establishing watches for changes of arbitrary resource types. The first is quite inflexible, and the second is quite complex and expensive for the overall system.
 
-- especially if shared aspects are involved, status updates for multiple, potentially an arbitrary number of resource types have to be done by the controller responsible for the aspect.
+- especially if shared aspects are involved managed by own controllers, status updates for multiple, potentially an arbitrary number of resource types have to be done by the controller responsible for the aspect.
 
-There are always special scenarios where the simple usage of single main resources with dynamic fields are applicable, but this cannot be the general solution for all the other more complex scenarios.
+There are always special scenarios where the simple usage of a single main resource with dynamic fields is applicable, but this cannot be the general solution for all the other more complex scenarios.
 
-Interestingly, Kubernetes has already chosen another way for a very special common scenario: credentials.
-There are many resource types for which the controller requires credentials to handle the resource mapping. This led to the externalization of this aspect into an independent type of resource: *Secrets*. Instead of adding the attributes required for this kind of aspect to all resource types requiring access to credentials (inbound flavor), credentials are stored as specification of separate *Secret* resources. Secrets can be shared by multiple resources and even resource types by establishing resource references in the consuming resources. According to the classification above, such secrets are intrinsic, non-specific and inbound aspects of those resource types.
+### Aspect Resources
+
+Interestingly, Kubernetes has already chosen another way to handle aspects for a very special common scenario: credentials.
+There are many resource types for which a controller requires credentials to handle the resource mapping. This led to the externalization of this aspect into an independent type of resource: *Secrets*. Instead of adding the attributes required for this kind of aspect to all resource types requiring access to credentials (inbound flavor), credentials are stored as specification of separate *Secret* resources. Secrets can be shared by multiple resources and even resource types by establishing resource references in the consuming resources. According to the classification above, such secrets are *intrinsic*, *non-specific*, *inbound*, *polymorphic* and *locally* handled aspects of those resource types. Polymorphic in the sense that every user of a secret might use different attributes. This is reflected by the *Secret* resource by offering a dynamic set of data attributes. Every attribute may have an arbitrary binary value, which can be used to express complex data types, like a complete kubeconfig.
 
   <p align="center">
   <img src="./media/inbound-shared.png" style="width:60%" />
   </p>
 
-But they may also be used to expose access information for an external resource managed by a controller. Then they are outbound aspects of the resource the controller is working on, which might be connected to the origin resource by owner references.
+But they may also be used to expose access information for an external resource managed by a controller. Then they are outbound aspects locally managed by the controller working on their main resources. They might be connected to the origin resource by owner references, or the status of the main resource includes an appropriate reference.
 
 Because of the *inbound/non-specific* combination, using resources must explicitly refer to them. But this basic idea can be generalized to be usable for other complex shared scenarios, also.
 
-The aspect is implemented as a separate resource type. It can again provide specification and status information (if there is a managing controller). The aspect resource can be an informational resource (like Secrets) without a controller, or managing the aspect for an owning main resource in some target environment by a separate controller.
+It will become relevant whenever shared resources are involved just used by various other resources or linking together some kind of producer with some kind of consumer.
+The aspect is implemented as a separate resource type. It can again provide specification and status information (if there is an own managing controller). The aspect resource can be an informational resource (like Secrets) without a controller, consumed or provided by the controller of the using/providing resource. Or the aspect is managed for an owning main resource in some target environment by a separate controller.
 
-Designing the layout for interconnected resource types should not only focus on the layout of the main resource manifests, but include the possibility to split resources into multiple aspect resources.
+Designing the layout for interconnected resource types should not only focus on the layout of the main resource manifests but consider the possibility to split resources into multiple aspect resources.
 
 Like secrets, such resources can be used as inbound or outbound aspects.
 - For inbound resources they are referenced by the consuming resource. Or if they are attached to a resource, the aspect features such a reference back to the main resource.
-- Outbound aspects can be assigned to their master resource by *owner references*, a concept supported by the Kubernetes API Server, which binds the lifecycle of a resource to the owner resource.  Such resources are typically maintained by the controller of the maon resource. But it might also be possible to split the controller.
+- Outbound aspects can be assigned to their master resource by *owner references*, a concept supported by the Kubernetes API Server, which binds the lifecycle of a resource to the owner resource.  Such resources are typically maintained by the controller of the main resource. But it might also be possible to split the controller.
 
 
   <p align="center">
   <img src="./media/attached.png" style="width:60%" />
   </p>
 
-It would also be possible to use them for resource type specific aspects, but here the traditional aspect implementation seems to be preferable.
+Dynamically attached aspects are typically handled by a separate controller implementing this dedicated aspect for a main resource the aspect is attached to.
+
+It would also be possible to use them for fixed,resource-type-specific aspects, but if they are not dynamically attachable and do not use own controllers the traditional aspect implementation seems to be preferable.
+
 If aspects are used by multiple resource types, particular aspect resources could simplify the complete process handling and reduce the load on the data plane. Instead of watching an arbitrary number of resource types supporting this aspect, aspect controllers can focus on *their* resource and use the attached main resources as side resource. 
 
-For outbound aspects provided by multiple resource types, controllers for consuming resource types can also benefit from such a layout. The consuming resource still references the intended (main) resource providing the expected aspect. This resource publishes this aspect by a separate resource. All the consuming controllers need only to watch this fixed resource type. Using the owner reference the relation to the appropriate main resource can be determined. By maintaining a corresponding index the original resource reference can be mapped to the assigned aspect resource to get access to the desired information without requiring to watch or even know the origin resource providing the aspect.
+A typical scenario for which using separate aspect resources is highly recommended is the interaction of aspect-providing and consuming resources.
+For outbound aspects provided by multiple resource types, controllers for consuming resource types can also benefit from such a layout. The consuming resource still references the intended (main) resource providing the aspect expected to be consumed. This main resource publishes this aspect by a separate resource. All the consuming controllers now need only to watch this fixed resource type instead of all possible aspect-providing resource types. Using the owner references, the relation to the appropriate main resource can be determined. By maintaining an index over the owners for the aspect resources, the original resource reference to the provider can be mapped to the assigned aspect resource. This can then be used to get access to the desired information without requiring to watch or even to know the origin resource providing the aspect. It is sufficient that the providing resource (controller) publishes an appropriate aspect resource.
 
   <p align="center">
   <img src="./media/outbound-shared.png" style="width:60%" />
   </p>
 
-Especially for attachable aspects, such a particular aspect resource type makes sense, because the main resource does not necessarily know about this aspect, it even does not need to be prepared to handle aspects at all. Attachable aspects keep references to the object they are attached to.
+Especially for dynamically attachable aspects, such a particular aspect resource type makes sense, because the main resource does not necessarily know about this aspect, it even does not need to be prepared to handle aspects at all. Attachable aspects keep references to the object they are attached to.
+An example here can be the DNS extension offered by Gardener, which enables standard *Service* objects to request DNS names. Such extensions are typically implemented by using annotations to provide such additional
+information. But al this is untyped and not covered by the API server. A better way would be to use separate aspect resources or to offer a standard extension mechanism as part of the base resource (see next section).
 
 And the common advantage is that aspect resources can make use of the complete features of the data plane, including access control and structure definitions via OpenAPI specifications.
 
-In general, whenever some kind of shared behaviour is involved, dedicated aspect resource types seem very appropriate.
+In general, whenever some kind of shared behaviour is involved or there is a polymorphic consumer/provider relation, dedicated aspect resource types seem to be very appropriate.
 
 Let's return to our *Flux* example. The snapshot aspect is basically an intrinsic, outbound and shared aspect. It is implemented by special status attributes and all deployers need to know the supported source resource types, because they need to react on changes for those resource types. And they need to understand the status fields. The result is a completely hard-wired closed environment for a fixed number of resource types. It is not possible to just add new source resource types. And it is even impossible to introduce transformation-like resource types, which consume a snapshot and offer again a modified one for other consumers. Just by introducing some kind of *Snapshot* resource as a shared aspect could open up the scenario to evolve to a completely open ecosystem. It could arbitrarily be extended for any use case by adding new source types or actions.
 
@@ -326,19 +342,46 @@ Also, our account example can easily be implemented. New attachable systems coul
 
 This way, aspect resources should be a standard layout for more complex, especially shared resource scenarios in a general management environment based on a Kubernetes-Resource-Model implementation.
 
-## Self-Descriptive Environment
+### Embedded aspect information
+
+If an aspect is not externalized as described in the previous section, its information must be part of the resource structure of the owning resource. This can happen for inbound as well as outbound aspects. For non-polymorphic types, like the container descriptions for *Pod*s this is straight forward. But it becomes difficult if polymorphic aspects are involved.
+
+There are two basic scenarios for such polymorphic aspects:
+
+- Implementation sharding.
+
+  There are several controllers with different implementations that can be chosen to implement a resource. Those implementations use generic data for all kinds of implementations provided by the standard structure of the resource. But they might also require type-specific data, as can be seen for *Service* or *Ingress* resources, where special implementations require further information like networks, which cannot be part of the standard resource layout.
+
+- Extensions or any kind of variable parts.
+
+  This might be externally attached aspects, which should be expressable as part of the base resource, for example, like conditions as a list of extensions.
+  Or the resource specification should be used to express intrinsic, but polymorphic aspects, that will be externalized later by the implementing controller (for example, the IaaS information as part of a *Shoot* object of Gardener)
+
+The common feature of those scenarios is the need for polymorphic content as part of a resource manifest, because different extension flavors typically require (at least partially) different sets of attributes.
+
+If those extensions are not forseen by the base resource, the typical solution is to add required information as a set of (untyped) simple string-valued annotations.
+
+Aetter solution to solve this problem is possible if the resource is prepared for such extensions. Such resources use raw extension fields without a fixed structure, but with at least some fields expressing the format type. To express this type, typically the well-known Kubernetes mechanism with API-version and kind is used. This allows the embedding of arbitrary structures into an otherwise statically typed manifest.
+
+Another possibility used for example in secrets, would be to embed base64 encoded binary information, which is later interpreted by the using controller. But to embed JSON or YAML as binary data is not very practical for users, neither for writing nor reading.
+
+Regardless, which solutionis chosen, they all share the same problem, the possible extension types and their structure are not formalized by the API machinery and cannot be checked or discovered.
+ 
+### Self-Descriptive Environment
 
 A Kubernetes data plane is extensible and mostly self-descriptive. New resource types can be configured via an own resource type, the Custom Resource Definitions (CRDs). They also include a structural definition of the resource manifest. The available types and formats can be queried from the data plane API provided by the API server.
 
-Those extensions are used for various use cases shown before:
+Those resource types are also used for various use cases shown before:
 - implementation sharding (polymorphism)
+- requiring polymorphic inbound aspects
 - providing shared aspects to be used by other resources following the implementation sharding.
 
-Unfortunately, this is not possible for typed sub-structures. Although it is a common pattern to use type information similar to the one used for resource manifests, appropriate type information is not available on the data plane level, at most on the client side on the library level of a controller. Therefore, there are no standard structural checks for used extensions, neither for externaled one (as aspect resources) nor for aspect descriptions embedded as raw extensions (although those extensions still have type information). 
+Those scenarios require polymorphic parts in the resource manifest. 
+Unfortunately, such a structural definition is not possible for those kinds of dynamic sub-structures. Although it is a common pattern to use type information similar to the one used for resource manifests, appropriate type-specific structural information is not available on the data plane level. At most on the client side on the library level, a responsible controller can check this information. Therefore, there are no standard structural checks for used extensions, neither for externalized ones (which kind of aspect resources are possible) nor for aspect descriptions embedded as raw extensions (although those extensions still have type information). 
 
-For the implementation sharding, an additional mechanism is required to assign resources to dedicated implementations (controllers). This is either handled by an explicit field, for example by the type of extension field (if available) or by annotations as explained earlier. Those annotations are also used to configure some parameterization, if no extension field is foreseen (for example in Ingress resources in Kubernetes).
+For the implementation sharding, an additional mechanism is required to assign resources to dedicated implementations (controllers). This is either handled by an explicit field, for example by the type of extension field (if available) or by annotations as explained earlier. Those annotations are also used to configure some parameterization if no extension field is foreseen (for example in Ingress resources in Kubernetes).
 
-Those kinds of information are not part of the self-describing features of the Kubernetes data plane. It would be extremely helpful if the implementations for a polymorphic resource could be declared like new resource types (for example for ingress controller variants). Similar to CRDs this could be done by an *ImplementationClass* resource combined with a formalized extension field in the resource in question.
+Those kinds of information are not part of the self-describing features of the Kubernetes data plane. It would be extremely helpful if the implementations for a polymorphic resource could be declared like new resource types (for example, for ingress controller variants). Similar to CRDs, this could be done by an *ImplementationClass* resource combined with a formalized extension field in the resource in question.
 
 
   <p align="center">
