@@ -84,7 +84,7 @@ described artifacts exploiting identities and access information from level 1.
 Hereby, runtimes are typically nested; for example, a container is running in Pod running on a node, which is part of a Kubernetes cluster. The identified 
 elements are assigned to elements of the design model from level 2. This can be achieved with the help of the deployment system, which annotates deployed elements
 according to the information received from level 2, which is its client. 
-Or correlating technical deployments annotated during the production process by informations from model 1 (for example by adding annotations to an image manifest)
+Or correlating technical deployments annotated during the production process by informations from model 1 (for example, by adding annotations to an image manifest)
 with deployments initiated by model 3.
 
 ### The Software Model
@@ -123,6 +123,7 @@ Those elements are called *Component Versions*.
 A component version describes particular versions of a software whose meaning is defined by the component they are related to.
 A component may have any number of versions (even none, if it is
 just in planning). A component version is a set of software *Artifacts*, which together build a version of a component.
+An artifact carries some metadata, like a type (for example: container image), a version, and a formal description how to access technical content.
 Such a set might be hierarchically described.
 
 <p align="center">
@@ -138,10 +139,10 @@ acting on the model to find artifacts across a range of versions
 by referring to the persistent meaning of an artifact in the context of a component.
 
 This way any artifact can be addressed either globally or locally. Globally any artifact is addressed by an identity
-given by the component id, the component version and the name of the artifact as defined in this version. Relative to a component version, there is also a possibility to refer to any artifact. This is possible by either using directly its local name or by specifying a path of component version reference names to navigate down the nesting hierarchy followed by the artifact name as used in the containing component version (*relative artifact names*).
+given by the component id, the component version and the name of the artifact as defined in this version. Relative to a component version, there is also a possibility to refer to any artifact. This is possible either by using directly its local name or by specifying a path of component version reference names to navigate down the nesting hierarchy followed by the artifact name as used in the containing component version (*relative artifact names*).
 
 <p align="center">
-<img src="./media/ocm1a.png" style="width:50%" />
+<img src="./media/ocm1a.png" style="width:70%" />
 </p>
 
 Besides the pure model element definitions, a description format for component versions is defined. It can be persisted in some content repository (see below). 
@@ -149,7 +150,7 @@ Besides the pure model element definitions, a description format for component v
 This description format is the basis for signing the content to ensure and validate the authenticity of provided content.
 To ensure the validity of the described information even along a transport path of software as required to support private or even fenced environments, this must be reflected in the way artifacts are described.
 One requirement was to provide information required to access the
-technical artifacts behind the description. To technology-agnostic, such artifacts may live in any kind of technical repository. For example, OCI registries are simple blob store. This is formalized by introducing access types defining a set of attributes (the access specification) required to technically locate and access (not required credentials) the artifact in any repository. This information needs to be shared, but can be modified by tools that transfer content from one repository landscape to another. Signing a component version must omit such environment-specific information but include information identifying the technical content. This is typically a hash, either a binary hash, or a logical hash for content, which might require modification during a transport step.
+technical artifacts behind the description. To technology-agnostic, such artifacts may live in any kind of technical repository. For example, OCI registries are simple blob store. This is formalized by introducing access types defining a set of attributes (the access specification) required to technically locate and access (not required credentials) the artifact in any repository. This information needs to be shared but can be modified by tools that transfer content from one repository landscape to another. Signing a component version must omit such environment-specific information but include information identifying the technical content. This is typically a hash, either a binary hash, or a logical hash for content, which might require modification during a transport step.
 
 To support this, a normalization of a component version description is defined and  a formal API to gain access to the technical artifact blob according to the actual access specification.
 
@@ -158,25 +159,25 @@ component version descriptions and to lookup those descriptions
 just be using their identity.
 
 The model does not define an own technical repository specification for this, like OCI did for images. Instead,
-this is covered by including specifications for a mapping of the OCM model to existing technical repository types. Like the access specification this is typed and can be extended by new types.
+this is covered by including specifications for a mapping of the OCM model to existing technical repository types. Like the access specification, this is typed and can be extended by new types.
 
-To support a transport of software, it must be possible to store all content, the descriptions plus described artifacts in some 
+To support the transport of software, it must be possible to store all content, the descriptions plus described artifacts in some 
 archive, which may act as OCM repository. But because it must also be able to host the artifacts without referring to external repositories, the repository specification as well as
 the access specification must include the possibility to store artifacts along with the component version description (called *local access*).
 
-All this requires some core tooling as described by the next section. But the model is basically an enabler for many more usecases and specialized tooling. Because it combines an environment and technology-independent descriptions of software, the technical access to described content and a globally unique
-identification, independent tools can operate on the described content and maintain own information bases. The information is always bound together by using the common identity sheme.
+All this requires some core tooling as described by the next section. But the model is basically an enabler for many more use cases and specialized tooling. Because it combines an environment and technology-independent descriptions of software, the technical access to described content and a globally unique
+identification, independent tools can operate on the described content and maintain own information bases. The information is always bound together by using the common identity scheme.
 This enables tools to easily correlate information found in multiple such information bases. For example, the *OCM Gear*
-provides a scanning, reporting and triaging framework for vulerabilities in the context of component version aggregation.
+provides a scanning, reporting and triaging framework for vulnerabilities in the context of component version aggregation.
 It is based on inbound identities, uses the artifact access feature to feed the scanners and stored the found information under the identities found in the component version descriptions.
 
-Another example can be installers directly working on a component version to extract the required installation procedures delivered as part of the software and retrieving the required deploy artifacts or their locations in the actual repository landscape.
+Another example can be installers directly working on a component version to extract the required installation procedures delivered as part of the software and retrieving the required deployment artifacts or their locations in the actual repository landscape.
 
 ### The Tooling
 
 The technology independence of the model requires a number of extension points, which need implementations to be provided for, to finally work with the model in a concreate environment. For example, different types for access specifications, signing algorithms and tools or OCM repository types.
 
-To achieve all the goals defined at the beginning the model and description format must be accompanied by a basic core-tooling.
+To achieve all the goals defined at the beginning, the model and description format must be accompanied by a basic core-tooling.
 based on an extensible library able to handle all those cases. It allows transparent access to component versions with all the described content stored in any supported OCM repository and external content repository, including a file-based (transport archive) one.
 
 On-top an *ocm-cli* is provided able to do all the standard tasks 
@@ -188,7 +189,7 @@ required to work with the model:
 - transporting from one repository landscape to another (or into a archive file and vice versa)  adapting the access information by uploading the artifacts into an intended repository landscape.
 
 <p align="center">
-<img src="./media/ocm2.png" style="width:50%" />
+<img src="./media/ocm2.png" style="width:70%" />
 </p>
 
 ### The Service Model
@@ -214,11 +215,11 @@ A service may be an *Instance* of some service kind.
 
 A *Service Kind* describes the common features shared by all its instances.
 
-Basically, the features of a service can always be described in an abstract manner by a service kind. For example, the API specification must be identical, but every instance may have another formal instance endpoint to reach the service. The term service, service instance and service kind are often used interchangeable. If a dedicated meaning is intended, which is not evident from the usage context
+Basically, the features of a service can always be described in an abstract manner by a service kind. For example, the API specification must be identical, but every instance may have another formal instance endpoint to reach the service. The term service, service instance and service kind are often used interchangeable. If a dedicated meaning is intended, which is not evident from the usage context,
 the explicit terms are used.
 
-A service typically lives on a service runtime, for example a VM lives on a hypervisor, a Kubernetes Pod on a Kubernetes cluster, or even a database scheme living on a database.
-A database scheme is a service in the sense of the definition of a service used here, because it is an entity with dedicated users, permissions and maintained elements (like tables) separated from elements in other schemes. It has an own API and API endpoint. A scheme has formally an own endpoint although it is typically reachable over a common API of the database. This is comparable to objects and classes in an object-oriented environment. Technically, the methods and their implementations are bound to the classes. But formally they belong to the objects, the access point is not the class (like for abstract data types), but the object identity.
+A service typically lives on a service runtime. For example, a VM lives on a hypervisor, a Kubernetes Pod on a Kubernetes cluster, or even a database scheme living on a database.
+A database scheme is a service in the sense of the definition of a service used here, because it is an entity with dedicated users, permissions and maintained elements (like tables) separated from elements in other schemes. It has an own API and API endpoint. A scheme formally has an own endpoint, although it is typically reachable over a common API of the database. This is comparable to objects and classes in an object-oriented environment. Technically, the methods and their implementations are bound to the classes. But formally they belong to the objects, the access point is not the class (like for abstract data types), but the object identity.
 
 <p align="center">
 <img src="./media/service-runtime.png" style="width:10%" />
@@ -239,7 +240,7 @@ n general, it may consist of a set of other services, which are integral part of
 
 *Implementation dependencies* are dependencies to other services which describe an internal decomposition of the service into smaller services.
 
-Besides those implementation dependencies a service may be orchestrated in an external mesh of interconnected services to finally provide its functionality towards its users. Those services are required to fulfill API requests but are not part of its decomposition. Typically, this set of services is building some kind of business context. The business context binds together a set of services, which share a common interpretation context for elements like business partners, customers, or cost centers.
+Besides those implementation dependencies, a service may be orchestrated in an external mesh of interconnected services to finally provide its functionality towards its users. Those services are required to fulfill API requests but are not part of its decomposition. Typically, this set of services is building some kind of business context. The business context binds together a set of services, which share a common interpretation context for elements like business partners, customers, or cost centers.
 The particular dependencies are called orchestration dependencies.
 
 <p align="center">
@@ -253,14 +254,14 @@ Every service may be decomposed into a set of subsequent other services accordin
 
 A typical service description model for such a realm just describes the orchestration dependencies of all involved services. Additionally, implementation dependencies are used for all those services as long as their lifecycles are not covered by the installation procedure of the particular service.
 
-For a cloud-based environment this is not sufficient because a completely new kind of service must be handled. While in on-premise scenarios dedicated service instances are explicitly installed per landscape context, cloud means an arbitrary number of business contexts are created on-demand by customers of the cloud landscape. This requires a completely new kind of service: Services managing the lifecycle of other (managed) services capable to manage the lifecycle of such service instances and orchestrate them on demand.
+For a cloud-based environment this is not sufficient because a completely new kind of service must be handled. While in on-premise scenarios dedicated service instances are explicitly installed per landscape context, cloud means an arbitrary number of business contexts are created on-demand by customers of the cloud landscape. This requires a completely new kind of service: Services managing the lifecycle of other (managed) services and orchestrate them on demand.
 
 A *service provider service* (or short just *service provider*) is a service offering a lifecycle API for service instances of one or more other kinds.
 
 A *managed service instance* (or short *managed service*) is a service (instance) whose lifecycle is managed by a service provider.
 
 <p align="center">
-<img src="./media/service-provider.png" style="width:70%" />
+<img src="./media/service-provider.png" style="width:50%" />
 </p>
 
 Compared to a typical on-premise landscape the service providers are able to create the managed service finally used to orchestrate a dedicated usage context.
@@ -270,7 +271,7 @@ This requires three different features:
 -	The service provider API can again be decomposed into two different APIs:
      -	Tenant/account creation
      -	Lifecycle API as part of a particular tenant
-     If sub accounts are supported (preferred), the account is a further resource manageable by resources in an account.
+     If sub-accounts are supported (preferred), the account is a further resource manageable by resources in an account.
 -	To support the orchestration of managed services in a business context the configuration of service requests must include the dependencies used to embed a service instance into its interconnected business context. The consumer placing an order for an instance must include the intended orchestration dependencies (used to connect the new instance with other services in the business context) in the specification of the order.
 
 Dependencies to a service provider are used to maintain digital twins for managed service instances. For example, a service provider could use another service provider to
@@ -310,7 +311,7 @@ A *Service* describes the features of arbibrary instances of a particular versio
 One such feature is the API (or potentially multiple APIs) of a service instance.
 Other ones are the required implementation and orchestration dependencies.
 
-The model distinguishes between three different service sub types:
+The model distinguishes between three different service sub-types:
 - ordinary services 
 - service providers 
 - installation services
@@ -344,8 +345,8 @@ to appropriate artifacts by *relative artifact references*, evaluated relative t
 This is at least required for an installation service. It defines the installer 
 artifact(s) required to execute the installation process.
 Another possibility is to link implementation artifacts to service definitions.
-But this is problematic, because it would not have technical relevance. It just be 
-informational content which tends to get outdated as soon it has been established.
+But this is problematic because it would not have technical relevance. It just contains 
+informational content which tends to get outdated as soon as it has been established.
 A better solution is to let the installer provide this information as will be seen
 in the section about the runtime model. The installer required information about the
 artifacts required for the deployments anyway. Here, we have technically relevant information, which always reflects the reality. It must dynamically be provided by the installer. The price is that this kind of information is not statically available as part of the model, but only dynamically in a runtime repository. But anyway, it still
@@ -375,7 +376,7 @@ Similar to the service model, the central and basically sole element of the desi
 
 
 <p align="center">
-<img src="./media/designtime-model.png" style="width:70%" />
+<img src="./media/designtime-model.png" style="width:50%" />
 </p>
 
 The identities of the service instances are not bound to some upper model and can freely be chosen
@@ -398,11 +399,11 @@ administrator.
 A simple concreate model could then look like this:
 
 <p align="center">
-<img src="./media/designtime-model2.png" style="width:70%" />
+<img src="./media/designtime-model2.png" style="width:40%" />
 </p>
 
 The landscape should include a dedicated service instance. This is the intention
-by the landscape designer. According to the service model, this implies some requirements, which have to be added by the landscape designer to finally have a valid and complete model. He decides to provide the desired service instance by a service provider using another service provider, for example to provide required runtime services (greyed). The final design is then stored in a design time repository
+by the landscape designer. According to the service model, this implies some requirements, which have to be added by the landscape designer to finally have a valid and complete model. He decides to provide the desired service instance by a service provider using another service provider. For example, to provide required runtime services (greyed). The final design is then stored in a design time repository
 to be usable by further tooling.
 
 
@@ -471,9 +472,9 @@ artifact in the component model (which is already formalized), and the plugins f
 
 ###### The Service Account Management
 
-To being able to work service providers must be able to interact with each other,
-this typically requires authentication and permissions. A landscape installation system
-must therefor fall back to anpthe tool, a *service account management*. THis must be standardized, to enable the installation system to request service accounts for service provides automatically passed to using services as part of the service provider orchestration.
+To be able to work, service providers must be able to interact with each other.
+This typically requires authentication and permissions. A landscape installation system
+must therefore fall back to another tool, a *service account management*. This must be standardized, to enable the installation system to request service accounts for service provides automatically passed to using services as part of the service provider orchestration.
 
 
 ##### Maintenace Optimizer 
@@ -485,7 +486,7 @@ must therefor fall back to anpthe tool, a *service account management*. THis mus
 But the landscape installation system could do even more than just initially setting up a landscape.
 It should keep the design time model in an own version describing the current state of the landscape. Whenever no the intended landscape is changed by the landscape designer,
 it can determine a delta and apply appropriate changes to the real technical landscape.
-Hereby, version contraints described by the service model can be used to propose
+Hereby, version constraints described by the service model can be used to propose
 and schedule upgrade paths.
 
 The result is then a deployment landscape consisting of the service instances described by the design time model plus implicitly creates service instances for implementation dependencies manged by the service providers, which could be described by the service model. It is important to note here that this description must be complete in terms
@@ -516,12 +517,12 @@ determined by another element is embedded into, stopping at some base elements, 
 This again results in a very simple model design.
 
 <p align="center">
-<img src="./media/runtime-model.png" style="width:70%" />
+<img src="./media/runtime-model.png" style="width:40%" />
 </p>
 
 It is basically oriented on the initial definition of a service (instance).
 
-There is one central element, the *Runtime Element* which runs on another element and may use other elements. All tose elements are formally typed, for example, it can be a VM, a Pod, or a Database Scheme.
+There is one central element, the *Runtime Element* which runs on another element and may use other elements. All those elements are formally typed. For example, it can be a VM, a Pod, or a Database Scheme.
 
 Additionally, there is an *Abstract Element*, which reflects an expected type of runtime elements. Any dynamically maintained element can be related, directly or indirectly to such an element to describe the reason for its existence.
 For example, in Kubernetes it could represent a set of Pods and active execution unit of a service, created via the generation chain Deployment/ReplicatSet/Pod. The relations inside the chain of technically provided by the system and can be used to derive the relation to the expected abstract element of a service deployment.
@@ -536,10 +537,10 @@ Such a relation could, for example, be established by annotations on the technic
 So, every runtime element must be relatable to either a component, service or design time model element. This information can later be used by an outer tools to relate the runtime elements to appropriate design time model elements.
 
 <p align="center">
-<img src="./media/runtime-model-relations.png" style="width:70%" />
+<img src="./media/runtime-model-relations.png" style="width:60%" />
 </p>
 
-But those relations are not generally possible, the only relations directly derivable from the landscape are the runs-on-relations. So, to setup a complete runtime model and correlate it with the desired design time model requires extnsive tool support, heuristics and specialized analysis funtionality.
+But those relations are not generally possible, the only relations directly derivable from the landscape are the runs-on-relations. So, to setup a complete runtime model and correlate it with the desired design time model requires extensive tool support, heuristics and specialized analysis functionality.
 
 
 #### The Tooling
@@ -566,7 +567,7 @@ Using the enhanced analysis and reporting capabilities of the analysis gear on t
 ## Enhancement Remarks
 
 The component model seems quite complete. For the upper models there will for sure be enhancements required. During the development of the various tool chains, such demands will arise to fulfill the need to couple and extend those toolsets.
-Fore example is quite evident that the service model must include formalized configuration information to be used by the landscape modeler. Another requirement arises from the runtime analysis, which will for sure require specialized correlation plugins deliverable by the component model. They must be assigned by the service model.
+For example, it is quite evident that the service model must include formalized configuration information to be used by the landscape modeler. Another requirement arises from the runtime analysis, which will for sure require specialized correlation plugins deliverable by the component model. They must be assigned by the service model.
 
 ## Bootstrapping
 
