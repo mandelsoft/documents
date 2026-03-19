@@ -521,13 +521,53 @@ This again results in a very simple model design.
 
 It is basically oriented on the initial definition of a service (instance).
 
-There is one central element, the *Runtime Element* which runs on another element and may use other elements. All tose elements are formally typed, for example it can be a VM, a Pod, or a Database Scheme.
+There is one central element, the *Runtime Element* which runs on another element and may use other elements. All tose elements are formally typed, for example, it can be a VM, a Pod, or a Database Scheme.
 
-Additionally, there is an *Abstract Element*, which reflects an expected type of runtime elements.
+Additionally, there is an *Abstract Element*, which reflects an expected type of runtime elements. Any dynamically maintained element can be related, directly or indirectly to such an element to describe the reason for its existence.
+For example, in Kubernetes it could represent a set of Pods and active execution unit of a service, created via the generation chain Deployment/ReplicatSet/Pod. The relations inside the chain of technically provided by the system and can be used to derive the relation to the expected abstract element of a service deployment.
+
+This directly leads to a tool environment required to derive such a model from concreate landscape elements. And here we found several possibilities to relate the runtime model with the upper model layers.
+
+#### Relation to upper Model
+
+Any runtime element can directly be related to a service instance described by the design time model used to instantiate the landscape. This is the most obvious relation.
+Such a relation could, for example, be established by annotations on the technical elements (if supported). Even a relation to artifacts of the component model is partly possible. For example, an image intended to be published via the component model could be enriched already ba the build process by appropriate metadata. 
+
+So, every runtime element must be relatable to either a component, service or design time model element. This information can later be used by an outer tools to relate the runtime elements to appropriate design time model elements.
+
+<p align="center">
+<img src="./media/runtime-model-relations.png" style="width:70%" />
+</p>
+
+But those relations are not generally possible, the only relations directly derivable from the landscape are the runs-on-relations. So, to setup a complete runtime model and correlate it with the desired design time model requires extnsive tool support, heuristics and specialized analysis funtionality.
 
 
+#### The Tooling
 
+First of all, the elements of the runtime model must be held in a runtime repository.
+It is fed by different sources:
+- specialized runtime observers report the existence of technical elements and their runs-on relation
+- the observer extracts relations part of the metadata.
+- directly generated or expected abstract elements can directly be created by the installation environment.
+- the installation environments try to enrich directly deployed elements with appropriate metadata usable to establish a link to the  design time model elements they are created for.
 
-#### The Tooling]()
+On-top of this, analysis tools can be used trying to use the available information to establish relations to abstract runtime elements or even elements of higher models.
+For example, if a pod is created from an image known to be provided by a dedicated component of he component model, which is deployed as part of a service described by the service model, it must belong to a particular service kind. If then the deployment of a service instance according to the design time model is using a separate namespace in Kubernetes, the Pod can be assigned to this service. The more assignment paths are found the more plausible is such a derived relation.
+
+<p align="center">
+<img src="./media/runtime-correlation.png" style="width:70%" />
+</p>
+
+This analysis environment must be highly configurable and extensible. This could, for example, be achieved by using plugin artifacts described as part of the component model and assigned by the service model.
+
+The result is a runtime model usable to find unrelated runtime elements and following up the model hierarchy to relate runtime elements with delivery artifacts and components.
+Using the enhanced analysis and reporting capabilities of the analysis gear on top of the component model, it is then possible to figure out involved software, including libraries, versions, vulnerabilities and triage information.
+
+## Enhancement Remarks
+
+The component model seems quite complete. For the upper models there will for sure be enhancements required. During the development of the various tool chains, such demands will arise to fulfill the need to couple and extend those toolsets.
+Fore example is quite evident that the service model must include formalized configuration information to be used by the landscape modeler. Another requirement arises from the runtime analysis, which will for sure require specialized correlation plugins deliverable by the component model. They must be assigned by the service model.
 
 ## Bootstrapping
+
+A basis for an automated landscape setup. the required services, like the landscape modeler, the service account management and the landscape installation system must be available. This could be installed by a simplified installer already from the component model information. Their services will be initial parts of a landscape.
