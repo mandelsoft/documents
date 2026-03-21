@@ -82,4 +82,5 @@ according to the information received from level 2, which is its client.
 Or correlating technical deployments annotated during the production process by informations from model 1 (for example, by adding annotations to an image manifest)
 with deployments initiated by model 3.
 
+## [Responsibility Tracking](responsibilities.md)
 
