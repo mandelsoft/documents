@@ -50,7 +50,7 @@ Because the set of resource types supported by the data-plane is extensible and 
 <img src="./media/GitOps.png" style="width:50%" />
 </p>
 
-As a consequence the design of the resources and their relation to responsible controllers is extremely important for being applicable to a wide range of application scenarios (for example in the Apeiro context). The following sections will reconsider those relation patterns and describe possibilities and also requirements for the design of related resources and controllers.
+As a consequence, the design of the resources and their relation to responsible controllers is extremely important for being applicable to a wide range of application scenarios (for example in the Apeiro context). The following sections will reconsider those relation patterns and describe possibilities and also requirements for the design of related resources and controllers.
 
 ## Patterns for the Resource-Controller Relations
 
