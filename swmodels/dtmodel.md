@@ -9,7 +9,6 @@ Similar to the service model, the central and basically sole element of the desi
 - installation dependency to a service provider server or an installation service.
 - dependency to a runtime (could be a regular service) if not handled by the installation.
 
-
 <p align="center">
 <img src="./media/designtime-model.png" style="width:50%" />
 </p>
@@ -54,20 +53,27 @@ a formal declaration of the required configuration (not yet part of the model).
 This could be explicit elements, or it is mapped to annotation values.
 
 To provide the possibility for a complete automation, there must also be tooling
-able to apply such settings in a concrete setting. This could, for example, be
-plugins for a landscape installation system (see below), which are again expressed as
+able to transform such settings into a concrete technology-specific configuration.
+This could be, for example, plugins for a landscape installation system (see below), which are again expressed as
 artifacts in the component model referenced by the service model elements.
 
 ### The Tooling
 
 The previous section just opens the door for some useful tool support.
 
-#### Landscape Modeller
+#### Landscape Modeler
+
 Besides the repository, a *landscape modeler* could be provided. It provides
-and API (or UI) for the landscape designer assisting in providing a complete, valid and consistent landscape setup.
+an API (or UI) for the landscape designer assisting in providing a complete, valid and consistent landscape setup.
+
+
+<p align="center">
+<img src="media/landscape-resolve.png" style="width:70%" />
+</p>
+
 It uses the service model (available via the service model repository) to
 offer choices for the intended service instances. In a second step
-it can evaluate the dependencies and offer possibilities how to complete the
+it can evaluate the dependencies and offer possibilities, how to complete the
 setup. Depending on the content of the service model repository, this could be
 - directly implied services and installers, or
 - it offers possibilities to resolve dependencies by service instances already existing in the landscape or to create new ones.
@@ -80,15 +86,15 @@ setup. Depending on the content of the service model repository, this could be
 In the example shown above, the service repository contains an installer and a service provider for the initially intended service instance. The designer now has the choice,
 he decides for the provider solution, because there will be multiple such instances in the future. Now, this provider requires some other service, leaving the option for different implementations by describing a contract dependency. But the available service model
 contains only one possible matching service, which can automatically be added.
-Or the designed decides to make some other service option available, for example,
-by browsing a marketplace to look for and buy some other solution. This one the  also contains a service model description, which will be added to the service model repository.
-After this it is available for landscape modeler, which now can
+Or the designer decides to make some other service option available, for example,
+by browsing a marketplace to look for and buy some other solution. This one then also contains a service model description, which will be added to the service model repository.
+After this, it is available for the landscape modeler, which now can
 offer multiple possibilities for resolving the contract dependency.
 
 #### The Landscape Installation System
 
-For the design time model to technically relevant, it must somehow automatically
-be mapped to some operation environment. There might be several levels of support
+For the design time model to be technically relevant, it must somehow automatically
+be mapped to some operational environment. There might be several levels of support
 - mapping the landscape model into a Git-Ops project setup, which must be completed by the landscape admin.
 - directly mapping the landscape model into deployments,
 
@@ -96,7 +102,7 @@ The tool for the second possibility could be a *Landscape Installation System*.
 The task is quite complex and heterogeneous, but it could significantly be simplified
 by generally relying on some declarative ordering environment, as proposed by the *Apeiro Reference Architecture*.
 
-A second simplication could be to rely on Kubernetes-like execution environments and standardize installers to be implemented by *Kubernetes Operators*.
+A second simplication could be to rely on Kubernetes-like execution environments and standardized installers to be implemented by *Kubernetes Operators*.
 
 The task of a generic installation system is then just to deploy operator and
 resources to instruct the operator to deploy an instance. The latter part is basically
@@ -109,7 +115,7 @@ artifact in the component model (which is already formalized), and the plugins f
 
 To be able to work, service providers must be able to interact with each other.
 This typically requires authentication and permissions. A landscape installation system
-must therefore fall back to another tool, a *service account management*. This must be standardized, to enable the installation system to request service accounts for service provides automatically passed to using services as part of the service provider orchestration.
+must therefore fall back to another tool, a *service account management*. This must be standardized to enable the installation system to request service accounts for service providers automatically passed to using services as part of the service provider orchestration.
 
 
 #### Maintenace Optimizer
@@ -119,19 +125,19 @@ must therefore fall back to another tool, a *service account management*. This m
 </p>
 
 But the landscape installation system could do even more than just initially setting up a landscape.
-It should keep the design time model in an own version describing the current state of the landscape. Whenever no the intended landscape is changed by the landscape designer,
+It should keep the design time model in an own version describing the current state of the landscape. Whenever now the intended landscape is changed by the landscape designer,
 it can determine a delta and apply appropriate changes to the real technical landscape.
 Hereby, version constraints described by the service model can be used to propose
 and schedule upgrade paths.
 
-The result is then a deployment landscape consisting of the service instances described by the design time model plus implicitly creates service instances for implementation dependencies manged by the service providers, which could be described by the service model. It is important to note here that this description must be complete in terms
-of the modeled service dependencies. But especially implementation dependencies must not necessarily be modeled in all details.
+The result is then a deployment landscape consisting of the service instances described by the design time model plus implicitly created service instances for implementation dependencies manged by the service providers, which could be described by the service model. It is important to note here that this description must be complete in terms
+of the modeled service dependencies. But especially implementation dependencies must not necessarily be modeled in all details, because the can be handled internally, evan by an appropriate installer or service provider.
 
 ### Summary
 
 The design time model is able to completely describe an intended service landscape.
-Together with the [service model](svmodel.md) it allows validating the completenes and consistency of such a landscape. The service model information ca also be used to
+Together with the [service model](svmodel.md) it allows validating the completeness and consistency of such a landscape. The service model information can also be used to
 get all the necessary dependencies and find implementation proposals for services required to resolve them. Together with the [component model](swmodel.md) it is possible
 to derive installation guidelines or even complete installations using such environments like a landscape installation system and a service account management.
 
-Even without a runtime model, it is possible to gain information what software will be or should be part of a described landscape description, why it is required and where it is used.
+Even without a runtime model, it is possible to gain information about which software will be or should be part of a described landscape description, why it is required and where it is used.
