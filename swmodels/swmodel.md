@@ -95,7 +95,6 @@ Signing a component version must omit such environment-specific information but 
 <img src="./media/ocm-signing.png" style="width:70%" />
 </p>
 
-
 To support this, a normalization of a component version description is defined together with a formal API to gain access to the technical artifact blob according to the actual access specification.
 
 Using location agnostic descriptions accessing a component version content just by using a component version identity requires some kind of repository able to store
@@ -103,12 +102,15 @@ component version descriptions and to lookup those descriptions
 just be using their identity. This is then avting a basis to further look up and access artifacts in a repository landscape bound to the component repository.
 
 The model does not define an own technical repository specification for this, like OCI does for container images. Instead,
-this is covered by including specifications for a mapping of the OCM model to existing technical repository types. Like the access specification, this is typed and can be extended by new types.
+this is covered by including specifications for a mapping of the OCM model to existing technical repository types. Like the access specification, this is typed and can be extended by new types. The same is true for storing the artifacts. The component model
+comes with a specification how to embed the access to any kind of repository technology.
+For storing the model content a standard implementation is provided for OCI registries.
 
-To support the transport of software, it must be possible to store all content, the descriptions plus described artifacts in some
-archive, which may act as OCM repository. Because it must be possible to host the artifacts without referring to external repositories, the repository specification as well as
+Open Container Image (OCI) registries are today widely accepted standards, just like a few decade ago maven was the standard for java, and other programming languages came with their own repository implementation. OCI may be continuously developed towards a unified future, but we may as well find a disrupting innovation (maybe InterPlanetary File System) to take the lead. Therefore, OCM is repository technology independent and spans multiple thereof. It functions without special indexing APIs or referential links from the repository technology (which e.g. OCI currently does not support, but is in process of developing).
+
+Although content might be spread over multiple repositories, the transport of software sometimes requires storing all content, the descriptions plus described artifacts, in some archive format, which may act as OCM repository as well. Because it must be possible to host the artifacts without referring to external repositories, the repository specification as well as
 the access specification must include the possibility to store artifacts along with the component version description (called *local access*). Transporting software means 
-transporting artifacts described by a component version to another repository landscape. This might even be a completely fenced environment by using the transport archive feature. Besides the artifacts, the component version descriptions are also moved to a new local component repository by adapting the access information to reflect the new 
+transporting artifacts described by a component version to another repository landscape. This might even be a completely fenced environment by using the transport archive feature. Besides the artifacts, the component version descriptions are also copied to a new local component repository by adapting the access information to reflect the new 
 repository locations.
 
 All this requires some core tooling as described by the next section. But the model is basically an enabler for many more use cases and specialized tooling. Because it combines an environment and technology-independent description of software, the technical access to described content and a globally unique

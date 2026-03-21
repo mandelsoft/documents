@@ -1,8 +1,8 @@
-### The Design Time Model
+## The Design Time Model
 
-In contrast to the service model, which deals with describing the features of service kinds, the design time model is intended to describe a concrete orchestrated service landscape (or service mesh). Therefore, it deals with service instances.
+In contrast to the [service model](svmodel.md), which deals with describing the features of service kinds, the design time model is intended to describe a concrete orchestrated service landscape (or service mesh). Therefore, it completely deals with service instances.
 
-#### The Model
+### The Model
 
 Similar to the service model, the central and basically sole element of the design time model is the service instance. It features several kinds of relations:
 - orchestration dependencies
@@ -42,7 +42,7 @@ by the landscape designer. According to the service model, this implies some req
 to be usable by further tooling.
 
 
-#### Relation to the Component and Service Model
+### Relation to the Component and Service Model
 
 And here, there is the direct link to the service model. The service instance is directly related to a service of the service model. The definition here determines
 which dependencies must be resolved to result in a valid design time model.
@@ -58,11 +58,11 @@ able to apply such settings in a concrete setting. This could, for example, be
 plugins for a landscape installation system (see below), which are again expressed as
 artifacts in the component model referenced by the service model elements.
 
-#### The Tooling
+### The Tooling
 
 The previous section just opens the door for some useful tool support.
 
-##### Landscape Modeller
+#### Landscape Modeller
 Besides the repository, a *landscape modeler* could be provided. It provides
 and API (or UI) for the landscape designer assisting in providing a complete, valid and consistent landscape setup.
 It uses the service model (available via the service model repository) to
@@ -85,7 +85,7 @@ by browsing a marketplace to look for and buy some other solution. This one the 
 After this it is available for landscape modeler, which now can
 offer multiple possibilities for resolving the contract dependency.
 
-##### The Landscape Installation System
+#### The Landscape Installation System
 
 For the design time model to technically relevant, it must somehow automatically
 be mapped to some operation environment. There might be several levels of support
@@ -105,14 +105,14 @@ identical to ordering an instance from a service provider (see Apeiro).
 So, required is the link from the service model referring to an appropriate
 artifact in the component model (which is already formalized), and the plugins for the installation system used to map configurations into declarative request resources.
 
-###### The Service Account Management
+##### The Service Account Management
 
 To be able to work, service providers must be able to interact with each other.
 This typically requires authentication and permissions. A landscape installation system
 must therefore fall back to another tool, a *service account management*. This must be standardized, to enable the installation system to request service accounts for service provides automatically passed to using services as part of the service provider orchestration.
 
 
-##### Maintenace Optimizer
+#### Maintenace Optimizer
 
 <p align="center">
 <img src="./media/landscape-installation-system.png" style="width:70%" />
