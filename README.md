@@ -10,3 +10,4 @@ and learnings from this model applicable for other environmnets or scenarios
 - [*IaC* and *IaD* revisited](iac/README.md)
 - [API Model Design Patterns](resourcelayout/README.md)
 - [Object Relations in Kubernetes](objectrelations/README.md)
+- [End-to-End Software Model Hierarchy](swmodels/README.md)
